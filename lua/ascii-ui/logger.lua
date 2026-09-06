@@ -22,7 +22,13 @@ local log_path = log_dir .. "/ascii-ui.log"
 
 local function ensure_log_dir()
 	if vim.fn.isdirectory(log_dir) == 0 then
-		vim.fn.mkdir(log_dir, "p")
+		-- Logging must never crash the UI. Concurrent editor processes
+		-- (e.g. parallel test workers sharing one data directory) can race
+		-- to create this directory, and vim.fn.mkdir raises Vim:E739
+		-- "file already exists" when the directory appears between the
+		-- check above and this call. Swallow the error: the directory
+		-- existing is the only precondition we care about.
+		pcall(vim.fn.mkdir, log_dir, "p")
 	end
 end
 
@@ -32,13 +38,16 @@ local function write_log(level, msg, ...)
 	if not level or not msg then
 		return
 	end
-	ensure_log_dir()
 
 	if RUNNING_ON_ACTIONS then
-		-- If running on GitHub Actions, log to stdout instead of file
+		-- If running on GitHub Actions, log to stdout instead of file.
+		-- Do not ensure the log directory here: nothing is written to it,
+		-- and creating it races with other processes sharing the data dir.
 		print(string.format("[%s] %s", level, msg))
 		return
 	end
+
+	ensure_log_dir()
 
 	local file = io.open(log_path, "a")
 	if file then
