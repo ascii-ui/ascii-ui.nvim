@@ -111,6 +111,8 @@ make test                          # Full suite
 make test tests/unit/my_spec.lua   # Single file
 ```
 
+**Local != CI**: `make test` uses `scripts/test` (15s timeout wrapper); CI runs `lx test`. Orphaned headless nvim processes from killed runs interact badly with the wrapper timeout — if local results hang or look flaky, check `pgrep -fl nvim` before trusting the run.
+
 #### Async E2E Testing
 
 E2E test helpers that check buffer content or cursor position must use `vim.wait()` to poll for async operations:
@@ -130,6 +132,23 @@ end
 ```
 
 This matches the behavior of existing E2E tests where rendering is async.
+
+#### Testing Filesystem Code
+
+Do NOT redirect paths via XDG env vars: `vim.fn.stdpath()` caches at Neovim startup, so mutating the env afterward has no effect on the running instance. Stub the `vim.fn` boundary instead:
+
+```lua
+-- WRONG: stdpath() was already cached at startup
+vim.env.XDG_DATA_HOME = tmpdir
+
+-- CORRECT: stub the calls the code makes; restore in teardown
+local orig_mkdir = vim.fn.mkdir
+vim.fn.mkdir = function(path) recorded = path; return 1 end
+-- ... assert on `recorded`, then restore:
+vim.fn.mkdir = orig_mkdir
+```
+
+Same pattern for `vim.fn.isdirectory`, `io.open`, etc.
 
 ### Code Quality
 
@@ -176,6 +195,19 @@ git push github feature/my-branch
 ```
 
 If `gh` CLI is not authenticated, delegate PR creation to task-scheduler. Push the branch and report — task-scheduler will create the PR.
+
+#### Verifying CI on main (workflows without push triggers)
+
+`release.yml` (the main CI pipeline) runs only on a weekly schedule and `workflow_dispatch` — pushing to main starts no run. After a fix commit lands on main, verify it by dispatching manually:
+
+```bash
+gh workflow run release.yml --ref main
+gh run watch --exit-status        # block until the dispatched run finishes
+
+# `gh run view --log-failed` returns EMPTY for expired runs. Fetch per-job logs directly:
+gh run view <run_id> --json jobs -q '.jobs[] | "\(.database_id) \(.name) \(.conclusion)"'
+gh api repos/ascii-ui/ascii-ui.nvim/actions/jobs/<job_id>/logs
+```
 
 ### Definition of Done
 
@@ -240,6 +272,13 @@ Do NOT use `lua/ascii-ui/foo.lua` — this causes `mini.doc` duplicate tag issue
 - `Buffer`: Collection of lines
 - Use `Segment:wrap()` to create BufferLine from Segment
 
+### Diagnostics and Loggers Must Never Throw
+
+A logger failure must never fail the code being logged (see `logger.lua` and the E739 race fix in 3ec1752):
+
+- Wrap side-effecting fs ops (`vim.fn.mkdir`, `io.open`) in `pcall`. Concurrent callers racing to create a shared log dir make `vim.fn.mkdir` raise `Vim:E739` ("file already exists"), which propagates through `Logger.debug` and fails unrelated specs.
+- Short-circuit to stdout *before* touching the filesystem when `os.getenv("GITHUB_ACTIONS")` is set — CI never reads the log file, so skip all setup.
+
 ## Neovim Integration
 
 ### Key APIs
@@ -296,6 +335,7 @@ You can suggest consulting other agents when appropriate:
 - MUST consult before ANY commit (features, fixes, refactors)
 - MUST wait for explicit approval
 - DO NOT commit if convention-reviewer finds violations
+- **Fallback**: if no delegation/task tool exists in your environment, run `pre-commit run --all-files` (or `make check`) as a review proxy, commit only if it passes, and report the unmet consultation as a `[tool]` difficulty
 
 ### agent-teacher
 **MANDATORY after significant work:**
@@ -328,6 +368,13 @@ Yes: "Feature done. Tests pass. Ready commit."
 - If pre-commit passes → commit succeeded, move on
 - If pre-commit fails → read the error, fix the issue, commit again
 - Do NOT manually run `make check` or `make test` before committing — pre-commit handles this
+
+#### Background Jobs in the Persistent Shell
+
+The persistent bash tool kills background jobs (`cmd &` chains) when the foreground command returns. A detached `git commit` can die mid-hook, leaving orphaned headless nvim processes that poison later `make test` runs. Either:
+
+- Run `git commit` in the **foreground** with a generous tool `timeout` (hooks run the full suite), or
+- Fully detach: `nohup bash -c 'git commit -m "..." > /tmp/commit.log 2>&1' & disown`, then poll `/tmp/commit.log`.
 
 ## Skill Awareness
 
@@ -380,6 +427,7 @@ Global skills (listed in `available_skills` by the runtime) are general-purpose 
 
 ## Changelog
 
+- 2026-09-06: Captured ascii-ui-dev difficulty report (logger race fix): fs-stubbing test pattern over XDG env, CI verification recipe for dispatch-only `release.yml` + `gh api` job-log fallback, persistent-shell background job hygiene, never-throw logger rule, local-vs-CI test divergence note, convention-reviewer delegation fallback
 - 2026-08-09: Updated workflow to trust pre-commit hooks instead of manually running make check/test
 - 2026-08-08: Added async E2E testing guidance (vim.wait pattern), docs generation /tmp workaround (DOC_OUTPUT_FILE), remote verification for /tmp workspaces, PR delegation fallback, and module structure guidance (init.lua pattern for submodules)
 - 2026-08-08: Added mandatory rebase from origin/main step before implementation

@@ -71,6 +71,7 @@ Your ONLY capabilities are:
 - **Before commits**: ascii-ui-dev MUST consult convention-reviewer
 - **After fix sessions**: ascii-ui-dev MUST consult agent-teacher to capture lessons
 - **Task not done until**: Changes merged to main AND pipeline is green on main (not just local tests, not just pushed to branch)
+- **CI verification caveat**: `release.yml` has no push trigger — a push to main never auto-starts a run. "Pipeline green on main" means the delegated agent (which has bash) ran `gh workflow run release.yml --ref main` and it passed. Ask for the run URL/ID when confirming completion; do not assume a missing run means a green one.
 
 ### Concurrency Management
 
@@ -359,6 +360,7 @@ If an agent is stuck or blocked:
 
 ## Changelog
 
+- 2026-09-06: Added CI verification caveat — release.yml is dispatch-only; confirm run URL/ID when accepting "pipeline green"
 - 2026-08-09: Updated delegation template to trust pre-commit hooks instead of manual checks
 - 2026-08-08: Added push/verify CI requirements to delegation template. Added parallel agent workspace isolation pattern under /tmp.
 
