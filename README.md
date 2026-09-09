@@ -253,11 +253,13 @@ npx skills add ascii-ui/agent-skills --skill ascii-ui-nvim
 
 The skill gives agents a mental model of the component system, hooks, and common patterns so they can generate correct ascii-ui code without hallucinating APIs. Source: [ascii-ui/agent-skills](https://github.com/ascii-ui/agent-skills).
 
+## Design
+
+ascii-ui.nvim is a declarative UI framework for Neovim. Instead of building UI by imperatively managing windows and buffers, you describe what the UI should look like with functional components and hooks — and the fiber-based reconciler handles diffing, state updates, and re-renders behind the scenes.
+
 ## Related work
 
-The closest project to ascii-ui.nvim is **[nui.nvim](https://github.com/MunifTanjim/nui.nvim)**. nui.nvim provides a mature set of UI primitives — popup, input, select, layout, and more — built directly on Neovim's window and buffer APIs. ascii-ui.nvim takes a different approach: instead of imperative primitives, it gives you a declarative React-like component model with hooks and a fiber-based reconciler. You describe what the UI should look like, and the framework handles diffing, state updates, and re-renders.
-
-If nui.nvim is the toolkit, ascii-ui.nvim is the framework on top of it.
+- [nui.nvim](https://github.com/MunifTanjim/nui.nvim) — imperative UI primitives for Neovim
 
 ## Contributing
 
