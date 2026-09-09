@@ -1,0 +1,75 @@
+name: Bug Report
+description: Report a problem with ascii-ui.nvim
+title: "[bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please fill out the sections below so we can reproduce and fix the issue.
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of the bug.
+      placeholder: When I mount a component, the buffer is empty.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Provide a minimal code snippet or steps that trigger the bug.
+      placeholder: |
+        1. Require ascii-ui
+        2. Mount a Paragraph
+        3. Press <CR>
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+      placeholder: The paragraph should render.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What actually happened? Include any error messages.
+      placeholder: The floating window did not open and an error was thrown.
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Paste the output of `nvim --version` and any other relevant environment details.
+      placeholder: |
+        NVIM v0.10.0
+        Build type: Release
+        LuaJIT 2.1.1713484068
+        OS: macOS 14
+        Terminal: WezTerm
+    validations:
+      required: true
+
+  - type: textarea
+    id: config
+    attributes:
+      label: Minimal config
+      description: If possible, provide the smallest config that reproduces the issue.
+      render: lua
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add any other context, screenshots, or logs here.
