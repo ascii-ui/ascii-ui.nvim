@@ -53,5 +53,5 @@ chore(agents): clarify useState vs useReducer decision criteria
 Add explicit guidance on when to use each hook based on difficulty
 report from ascii-ui-dev.
 
-Co-authored-by: agent-teacher (opencode) <agent-teacher@ascii-ui.org>
+Co-authored-by: OpenCode (kimi-k2.7-code) <noreply@opencode.ai>
 ```

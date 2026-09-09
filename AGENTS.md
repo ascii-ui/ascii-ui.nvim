@@ -14,7 +14,7 @@ This project enforces conventional commits to enable automated changelogs, seman
 [optional body]
 
 [optional footer(s)]
-Co-authored-by: <agent-name> [(<tool>)] <<agent-name>@ascii-ui.org>
+Co-authored-by: <tool>[(<model>)] <email>
 ```
 
 ### Format Rules
@@ -109,12 +109,12 @@ feat(components): redesign Select component API
 
 BREAKING CHANGE: `options` prop renamed to `items`. Migration required.
 
-Co-authored-by: ascii-ui-dev (opencode) <ascii-ui-dev@ascii-ui.org>
+Co-authored-by: OpenCode (kimi-k2.7-code) <noreply@opencode.ai>
 ```
 
-### Agent attribution (required)
+### Agent attribution
 
-Every commit MUST include a `Co-authored-by:` trailer identifying which agent made the commit and which AI tool or editor was used. We deliberately use `Co-authored-by:` rather than the emerging `Assisted-by:` standard so that GitHub can render a co-author avatar when the email is linked to a GitHub account.
+Every AI-assisted commit MUST include a `Co-authored-by:` trailer identifying the AI tool or editor that assisted, and optionally the model. We deliberately use `Co-authored-by:` rather than the emerging `Assisted-by:` standard so that GitHub can render a co-author avatar when the tool's email is linked to a GitHub account.
 
 - `ascii-ui-dev` — Primary development agent
 - `nvim-docs-researcher` — Documentation research agent
@@ -130,7 +130,7 @@ feat(components): add Input component with validation
 
 Closes #42
 
-Co-authored-by: ascii-ui-dev (opencode) <ascii-ui-dev@ascii-ui.org>
+Co-authored-by: OpenCode (kimi-k2.7-code) <noreply@opencode.ai>
 ```
 
 **Closing keywords:**
@@ -146,7 +146,7 @@ Co-authored-by: ascii-ui-dev (opencode) <ascii-ui-dev@ascii-ui.org>
 ```
 feat(components): add Input component with validation
 
-Co-authored-by: ascii-ui-dev (opencode) <ascii-ui-dev@ascii-ui.org>
+Co-authored-by: OpenCode (kimi-k2.7-code) <noreply@opencode.ai>
 ```
 
 ✅ **Good:**
@@ -158,45 +158,45 @@ when async operations resolved. Add a mounted ref guard.
 
 Fixes #23
 
-Co-authored-by: ascii-ui-dev (opencode) <ascii-ui-dev@ascii-ui.org>
+Co-authored-by: OpenCode (kimi-k2.7-code) <noreply@opencode.ai>
 ```
 
 ✅ **Good:**
 ```
 chore(agents): update convention-reviewer checklist
 
-Co-authored-by: agent-teacher (opencode) <agent-teacher@ascii-ui.org>
+Co-authored-by: Claude (claude-opus-4) <noreply@anthropic.com>
 ```
 
 ❌ **Bad — missing type:**
 ```
 add Input component
 
-Co-authored-by: ascii-ui-dev (opencode) <ascii-ui-dev@ascii-ui.org>
+Co-authored-by: OpenCode (kimi-k2.7-code) <noreply@opencode.ai>
 ```
 
 ❌ **Bad — wrong mood:**
 ```
 feat(components): added new Input component
 
-Co-authored-by: ascii-ui-dev (opencode) <ascii-ui-dev@ascii-ui.org>
+Co-authored-by: OpenCode (kimi-k2.7-code) <noreply@opencode.ai>
 ```
 
 ❌ **Bad — uppercase first letter:**
 ```
 feat(components): Add new Input component
 
-Co-authored-by: ascii-ui-dev (opencode) <ascii-ui-dev@ascii-ui.org>
+Co-authored-by: OpenCode (kimi-k2.7-code) <noreply@opencode.ai>
 ```
 
 ❌ **Bad — period at end:**
 ```
 feat(components): add new Input component.
 
-Co-authored-by: ascii-ui-dev (opencode) <ascii-ui-dev@ascii-ui.org>
+Co-authored-by: OpenCode (kimi-k2.7-code) <noreply@opencode.ai>
 ```
 
-❌ **Bad — missing agent attribution:**
+❌ **Bad — missing AI attribution:**
 ```
 feat(components): add new Input component
 ```
@@ -205,7 +205,7 @@ feat(components): add new Input component
 ```
 refactor(agents): update convention-reviewer checklist
 
-Co-authored-by: agent-teacher (opencode) <agent-teacher@ascii-ui.org>
+Co-authored-by: Claude (claude-opus-4) <noreply@anthropic.com>
 ```
 (Should be `chore(agents):`)
 
@@ -291,7 +291,7 @@ git rebase origin/main
 make check
 make test
 git add .
-git commit -m "type(scope): description\n\nCo-authored-by: agent-name (tool) <agent-name@ascii-ui.org>"
+git commit -m "type(scope): description\n\nCo-authored-by: tool (model) <tool@example.com>"
 git push
 
 # If tests fail, use a WIP branch
@@ -349,19 +349,23 @@ The `commit-msg` hook enforces conventional commits format automatically. Commit
 ```
 type(scope): description
 
-Co-authored-by: <agent-name> [(<tool>)] <<agent-name>@ascii-ui.org>
+Co-authored-by: <tool>[(<model>)] <email>
 ```
 
 **Valid types:** `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`
 
-**Valid agents:** `ascii-ui-dev`, `nvim-docs-researcher`, `convention-reviewer`, `agent-teacher`, `task-scheduler`, `contributor`
+**Common tool emails:**
+- **Claude / Claude Code:** `Claude <noreply@anthropic.com>`
+- **GitHub Copilot:** `Copilot <copilot@github.com>`
+- **Cursor:** `Cursor <cursoragent@cursor.com>`
+- **OpenCode:** `OpenCode <noreply@opencode.ai>`
 
 **Rules:**
 - Scope is optional but must be lowercase if present
 - Description must start with lowercase letter
 - Description must not end with period
 - First line must be 72 characters or less
-- Must include a `Co-authored-by:` trailer naming the agent and AI tool/editor
+- AI-assisted commits must include a `Co-authored-by:` trailer naming the tool and, when relevant, the model
 
 ### Trusting Pre-commit Hooks
 

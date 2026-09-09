@@ -46,7 +46,7 @@ This project follows [trunk-based development](https://trunkbaseddevelopment.com
 
 ### Commit format
 
-Every commit must follow [Conventional Commits](https://www.conventionalcommits.org/) and include a `Co-authored-by:` trailer identifying the contributing agent. We use this format (instead of the emerging `Assisted-by:` standard) so that GitHub can render a co-author avatar when the email is linked to a GitHub account.
+Every commit must follow [Conventional Commits](https://www.conventionalcommits.org/) and include a `Co-authored-by:` trailer identifying the AI tool or editor that assisted. We use `Co-authored-by:` (instead of the emerging `Assisted-by:` standard) so that GitHub can render a co-author avatar when the email is linked to a GitHub account.
 
 ```
 <type>(<scope>): <description>
@@ -54,7 +54,7 @@ Every commit must follow [Conventional Commits](https://www.conventionalcommits.
 [optional body]
 
 [optional footer(s)]
-Co-authored-by: <agent-name> [(<tool>)] <<agent-name>@ascii-ui.org>
+Co-authored-by: <tool>[(<model>)] <email>
 ```
 
 Rules:
@@ -64,15 +64,20 @@ Rules:
 - Keep the first line under 72 characters.
 - Use one of the valid types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
 - Use a valid scope such as `components`, `hooks`, `fiber`, `buffer`, `layout`, `docs`, `build`, `tests`, or `agents`.
-- End the message with a `Co-authored-by:` trailer naming the agent and the AI tool or editor used, for example `Co-authored-by: ascii-ui-dev (opencode) <ascii-ui-dev@ascii-ui.org>`. Human contributors can use `Co-authored-by: contributor <contributor@ascii-ui.org>`.
-- For the GitHub avatar to appear, the email must belong to a real GitHub user or bot account.
+- End the message with a `Co-authored-by:` trailer naming the AI tool or editor and, when relevant, the model. For example: `Co-authored-by: OpenCode (kimi-k2.7-code) <noreply@opencode.ai>`.
+- Use the email convention adopted by each tool. Known examples:
+  - **Claude / Claude Code:** `Claude <noreply@anthropic.com>`
+  - **GitHub Copilot:** `Copilot <copilot@github.com>`
+  - **Cursor:** `Cursor <cursoragent@cursor.com>`
+  - **OpenCode:** `OpenCode <noreply@opencode.ai>`
+- Human-only commits can omit the trailer. If a commit was assisted by an AI, it must include the trailer.
 
 Good example:
 
 ```
 feat(components): add Input component with validation
 
-Co-authored-by: ascii-ui-dev (opencode) <ascii-ui-dev@ascii-ui.org>
+Co-authored-by: OpenCode (kimi-k2.7-code) <noreply@opencode.ai>
 ```
 
 ## How to add a new component
