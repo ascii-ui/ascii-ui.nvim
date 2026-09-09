@@ -253,37 +253,9 @@ npx skills add ascii-ui/agent-skills --skill ascii-ui-nvim
 
 The skill gives agents a mental model of the component system, hooks, and common patterns so they can generate correct ascii-ui code without hallucinating APIs. Source: [ascii-ui/agent-skills](https://github.com/ascii-ui/agent-skills).
 
-## Development
+## Contributing
 
-### Setup
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/ascii-ui/ascii-ui.nvim.git
-   cd ascii-ui.nvim
-   ```
-
-2. Install dependencies:
-   - [lux](https://github.com/lux-cli/lux) (Lua package manager)
-   - [stylua](https://github.com/JohnnyMorganz/StyLua) (Lua formatter)
-   - [luacheck](https://github.com/lunarmodules/luacheck) (Lua linter, via lux)
-   - [pre-commit](https://pre-commit.com/) (git hooks framework)
-   - [yq](https://github.com/mikefarah/yq) (YAML processor, for workflow validation)
-
-3. Install pre-commit hooks:
-   ```bash
-   pre-commit install --hook-dir .githooks
-   ```
-
-### Commands
-
-| Command | Purpose |
-|---|---|
-| `make test` | Run full test suite |
-| `make check` | Run lint, format check, docs check |
-| `make docs` | Regenerate vimdocs from Lua annotations |
-| `make debug` | Live-reload debug session |
-| `pre-commit run --all-files` | Run all pre-commit hooks manually |
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for development setup, commit conventions, and how to add components or hooks.
 
 ## License
 
