@@ -28,10 +28,11 @@ if [ ${#first_line} -gt 72 ]; then
 	exit 1
 fi
 
-# Check for agent footer
-if ! echo "$commit_msg" | grep -qE '\[agent: (ascii-ui-dev|nvim-docs-researcher|convention-reviewer|agent-teacher|task-scheduler)\]'; then
-	echo "ERROR: Commit must include [agent: <name>] footer"
-	echo "Valid agents: ascii-ui-dev, nvim-docs-researcher, convention-reviewer, agent-teacher, task-scheduler"
+# Check for agent co-author trailer
+if ! echo "$commit_msg" | grep -qE '^Co-authored-by: (ascii-ui-dev|nvim-docs-researcher|convention-reviewer|agent-teacher|task-scheduler|contributor)( \([^)]+\))? <\1@ascii-ui\.org>$'; then
+	echo "ERROR: Commit must include a Co-authored-by trailer"
+	echo "Expected format: Co-authored-by: <agent-name> [(<tool>)] <<agent-name>@ascii-ui.org>"
+	echo "Valid agents: ascii-ui-dev, nvim-docs-researcher, convention-reviewer, agent-teacher, task-scheduler, contributor"
 	exit 1
 fi
 

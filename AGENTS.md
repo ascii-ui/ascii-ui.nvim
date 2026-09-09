@@ -14,7 +14,7 @@ This project enforces conventional commits to enable automated changelogs, seman
 [optional body]
 
 [optional footer(s)]
-[agent: <agent-name>]
+Co-authored-by: <agent-name> [(<tool>)] <<agent-name>@ascii-ui.org>
 ```
 
 ### Format Rules
@@ -109,12 +109,12 @@ feat(components): redesign Select component API
 
 BREAKING CHANGE: `options` prop renamed to `items`. Migration required.
 
-[agent: ascii-ui-dev]
+Co-authored-by: ascii-ui-dev (opencode) <ascii-ui-dev@ascii-ui.org>
 ```
 
-### Agent Footer (required)
+### Agent attribution (required)
 
-Every commit MUST include an `[agent: <name>]` footer identifying which agent made the commit:
+Every commit MUST include a `Co-authored-by:` trailer identifying which agent made the commit and which AI tool or editor was used. We deliberately use `Co-authored-by:` rather than the emerging `Assisted-by:` standard so that GitHub can render a co-author avatar when the email is linked to a GitHub account.
 
 - `ascii-ui-dev` — Primary development agent
 - `nvim-docs-researcher` — Documentation research agent
@@ -130,7 +130,7 @@ feat(components): add Input component with validation
 
 Closes #42
 
-[agent: ascii-ui-dev]
+Co-authored-by: ascii-ui-dev (opencode) <ascii-ui-dev@ascii-ui.org>
 ```
 
 **Closing keywords:**
@@ -146,7 +146,7 @@ Closes #42
 ```
 feat(components): add Input component with validation
 
-[agent: ascii-ui-dev]
+Co-authored-by: ascii-ui-dev (opencode) <ascii-ui-dev@ascii-ui.org>
 ```
 
 ✅ **Good:**
@@ -158,45 +158,45 @@ when async operations resolved. Add a mounted ref guard.
 
 Fixes #23
 
-[agent: ascii-ui-dev]
+Co-authored-by: ascii-ui-dev (opencode) <ascii-ui-dev@ascii-ui.org>
 ```
 
 ✅ **Good:**
 ```
 chore(agents): update convention-reviewer checklist
 
-[agent: agent-teacher]
+Co-authored-by: agent-teacher (opencode) <agent-teacher@ascii-ui.org>
 ```
 
 ❌ **Bad — missing type:**
 ```
 add Input component
 
-[agent: ascii-ui-dev]
+Co-authored-by: ascii-ui-dev (opencode) <ascii-ui-dev@ascii-ui.org>
 ```
 
 ❌ **Bad — wrong mood:**
 ```
 feat(components): added new Input component
 
-[agent: ascii-ui-dev]
+Co-authored-by: ascii-ui-dev (opencode) <ascii-ui-dev@ascii-ui.org>
 ```
 
 ❌ **Bad — uppercase first letter:**
 ```
 feat(components): Add new Input component
 
-[agent: ascii-ui-dev]
+Co-authored-by: ascii-ui-dev (opencode) <ascii-ui-dev@ascii-ui.org>
 ```
 
 ❌ **Bad — period at end:**
 ```
 feat(components): add new Input component.
 
-[agent: ascii-ui-dev]
+Co-authored-by: ascii-ui-dev (opencode) <ascii-ui-dev@ascii-ui.org>
 ```
 
-❌ **Bad — missing agent footer:**
+❌ **Bad — missing agent attribution:**
 ```
 feat(components): add new Input component
 ```
@@ -205,7 +205,7 @@ feat(components): add new Input component
 ```
 refactor(agents): update convention-reviewer checklist
 
-[agent: agent-teacher]
+Co-authored-by: agent-teacher (opencode) <agent-teacher@ascii-ui.org>
 ```
 (Should be `chore(agents):`)
 
@@ -291,7 +291,7 @@ git rebase origin/main
 make check
 make test
 git add .
-git commit -m "type(scope): description\n\n[agent: agent-name]"
+git commit -m "type(scope): description\n\nCo-authored-by: agent-name (tool) <agent-name@ascii-ui.org>"
 git push
 
 # If tests fail, use a WIP branch
@@ -349,19 +349,19 @@ The `commit-msg` hook enforces conventional commits format automatically. Commit
 ```
 type(scope): description
 
-[agent: <name>]
+Co-authored-by: <agent-name> [(<tool>)] <<agent-name>@ascii-ui.org>
 ```
 
 **Valid types:** `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`
 
-**Valid agents:** `ascii-ui-dev`, `nvim-docs-researcher`, `convention-reviewer`, `agent-teacher`, `task-scheduler`
+**Valid agents:** `ascii-ui-dev`, `nvim-docs-researcher`, `convention-reviewer`, `agent-teacher`, `task-scheduler`, `contributor`
 
 **Rules:**
 - Scope is optional but must be lowercase if present
 - Description must start with lowercase letter
 - Description must not end with period
 - First line must be 72 characters or less
-- Must include `[agent: <name>]` footer
+- Must include a `Co-authored-by:` trailer naming the agent and AI tool/editor
 
 ### Trusting Pre-commit Hooks
 

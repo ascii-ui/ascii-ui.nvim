@@ -40,7 +40,7 @@ Agent should add changelog entry:
 
 Agent should commit with:
 - Proper format: `chore(agents): ...`
-- Agent footer: `[agent: agent-teacher]`
+- Agent attribution: `Co-authored-by: agent-teacher (opencode) <agent-teacher@ascii-ui.org>`
 - Clear description
 
 **Expected**: Commit follows convention
