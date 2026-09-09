@@ -6,48 +6,24 @@
 
 # ascii-ui.nvim
 
-**Build rich, interactive UIs for your Neovim plugins — with React-like components, hooks, and a fiber-based reconciler.**
+**Build rich, interactive Neovim plugin UIs with React-like components, hooks, and a fiber-based reconciler.**
 
-ascii-ui.nvim is a complete UI framework for Neovim. Write functional components, manage state with hooks, compose layouts, and render to floating windows or terminal stdout. No more wrestling with raw `nvim_buf_set_lines` calls.
+Instead of juggling `nvim_buf_set_lines`, highlight namespaces, and manual redraws, you describe your UI as functional components. ascii-ui.nvim renders it to a floating window or stdout, diffs the tree, and updates only what changed.
 
-## Features
+## The Problem
 
-- **React-like component model** — functional components with props, composition, and reconciliation
-- **Hooks** — `useState`, `useEffect`, `useReducer`, `useInterval`, `useTimeout`, `useConfig`
-- **Built-in components** — Button, Input, Select, Slider, Checkbox, Tree, Box, Paragraph
-- **Layout primitives** — `Row` and `Column` for horizontal and vertical arrangement
-- **Fiber-based reconciler** — efficient tree diffing and minimal re-renders
-- **Multiple viewports** — Neovim floating windows (default), terminal stdout, or custom
-- **Live reload** — instant feedback during development with `make debug`
-- **ANSI truecolor** — full color support via the `Color` class and segment colors
-- **Zero dependencies** — pure Lua, runs on Neovim's embedded Lua 5.1
+Building even a simple interactive UI in Neovim today means wiring together low-level APIs:
 
-## Quick Start
+- Create a buffer, set lines, add highlights
+- Track window IDs and buffer numbers
+- Re-render manually every time state changes
+- Handle focus, keymaps, and cleanup yourself
 
-### Installation
+A counter that should take a few lines quickly becomes a tangle of buffer and window management.
 
-**[lazy.nvim](https://github.com/folke/lazy.nvim):**
+## The Solution
 
-```lua
-return {
-    "ascii-ui/ascii-ui.nvim",
-    opts = {},
-}
-```
-
-**[luarocks](https://luarocks.org/):**
-
-```bash
-luarocks install ascii-ui
-```
-
-**[lux](https://github.com/lux-cli/lux):**
-
-```bash
-lux install ascii-ui
-```
-
-### Hello World
+ascii-ui.nvim brings a React-like model to Neovim plugin development:
 
 ```lua
 local ui = require("ascii-ui")
@@ -55,7 +31,7 @@ local Paragraph = ui.components.Paragraph
 local Button = ui.components.Button
 local useState = ui.hooks.useState
 
-local App = ui.createComponent("App", function()
+local Counter = ui.createComponent("Counter", function()
     local count, setCount = useState(0)
     return {
         Paragraph({ content = "Count: " .. count }),
@@ -68,10 +44,102 @@ local App = ui.createComponent("App", function()
     }
 end)
 
-ui.mount(App)
+ui.mount(Counter)
 ```
 
-That's it. A floating window opens with a counter and a button. Click the button, the count updates. State management and rendering handled for you.
+That is the whole component. State, rendering, diffing, and input are handled for you.
+
+## Quick Start
+
+### 1. Install
+
+**Built-in Neovim packages:**
+
+```bash
+git clone https://github.com/ascii-ui/ascii-ui.nvim.git \
+  ~/.config/nvim/pack/plugins/start/ascii-ui.nvim
+```
+
+**[lazy.nvim](https://github.com/folke/lazy.nvim):**
+
+```lua
+return {
+    "ascii-ui/ascii-ui.nvim",
+    opts = {},
+}
+```
+
+**[lux](https://github.com/lux-cli/lux):**
+
+```bash
+lux install ascii-ui
+```
+
+**[luarocks](https://luarocks.org/):**
+
+```bash
+luarocks install ascii-ui
+```
+
+### 2. Create a component
+
+Save this as `lua/my-counter.lua` (or paste it into your config):
+
+```lua
+local ui = require("ascii-ui")
+local Paragraph = ui.components.Paragraph
+local Button = ui.components.Button
+local useState = ui.hooks.useState
+
+return ui.createComponent("Counter", function()
+    local count, setCount = useState(0)
+    return {
+        Paragraph({ content = "Count: " .. count }),
+        Button({
+            label = "+1",
+            on_press = function()
+                setCount(count + 1)
+            end,
+        }),
+    }
+end)
+```
+
+### 3. Mount it
+
+From anywhere in Neovim:
+
+```lua
+local Counter = require("my-counter")
+require("ascii-ui").mount(Counter)
+```
+
+A floating window opens, and pressing the button updates the count instantly.
+
+## Example Output
+
+The counter above renders in a floating window like this:
+
+```
+╭──────────────╮
+│ Count: 0     │
+│ [ +1 ]       │
+╰──────────────╯
+```
+
+Press `<CR>` on the button and the count updates without you touching the buffer API.
+
+## Features
+
+- **React-like component model** — functional components with props, composition, and reconciliation
+- **Hooks** — `useState`, `useEffect`, `useReducer`, `useInterval`, `useTimeout`, `useConfig`
+- **Built-in components** — Button, Input, Select, Slider, Checkbox, Tree, Box, Paragraph
+- **Layout primitives** — `Row` and `Column` for horizontal and vertical arrangement
+- **Fiber-based reconciler** — efficient tree diffing and minimal re-renders
+- **Multiple viewports** — Neovim floating windows (default), terminal stdout, or custom
+- **Live reload** — instant feedback during development with `make debug`
+- **ANSI truecolor** — full color support via the `Color` class and segment colors
+- **Zero dependencies** — pure Lua, runs on Neovim's embedded Lua 5.1
 
 ## What Can You Build?
 
@@ -108,7 +176,7 @@ See the [`examples/`](./examples/) directory for more:
 | [**Hooks**](./docs/HOOKS.md) | State management, side effects, timers — the full hooks API |
 | [**Layout**](./docs/LAYOUT.md) | `Row` and `Column` for arranging components |
 | [**Advanced**](./docs/ADVANCED.md) | Custom components, viewports, low-level rendering (Segment, BufferLine, Buffer) |
-| [**API Reference**](https://ascii-ui.github.io/ascii-ui-docs/) | Full generated documentation |
+| [**API Reference**](https://ascii-ui.github.io/) | Full generated documentation |
 
 ## Configuration
 
@@ -130,8 +198,6 @@ require("ascii-ui").setup({
 ```
 
 ## Live Reload
-
-> **Experimental:** This feature is under active development and the API may change.
 
 ascii-ui.nvim ships a live-reload debug mode. Save any `.lua` file and the running Neovim instance automatically tears down the current UI, unloads all modules, and re-executes your script.
 
