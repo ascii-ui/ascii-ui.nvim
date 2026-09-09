@@ -8,7 +8,7 @@ A skill is a specialized instruction set that provides agents with domain-specif
 
 ## Available Skills
 
-_(No skills defined yet. Create skills as patterns emerge.)_
+- [`internal ascii-ui opensource skills`](./internal%20ascii-ui%20opensource%20skills/SKILL.md) — Workflow for working with the ascii-ui.nvim launch project board: picking up tasks, adding evidence, and moving items to Human check.
 
 ## Creating a New Skill
 
@@ -73,4 +73,5 @@ Agents should:
 
 ## Changelog
 
+- 2026-09-09: Added `internal ascii-ui opensource skills` project board workflow skill
 - 2026-08-08: Initial skills directory created
