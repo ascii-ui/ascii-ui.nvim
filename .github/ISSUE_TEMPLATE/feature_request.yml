@@ -1,0 +1,39 @@
+name: Feature Request
+description: Suggest an idea for ascii-ui.nvim
+title: "[feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for sharing your idea. Please describe the problem and the feature you would like to see.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem are you trying to solve? Ex. I'm always frustrated when [...]
+      placeholder: I need a way to group checkboxes.
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the feature or API you would like to see added.
+      placeholder: Add a CheckboxGroup component that accepts a list of options.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Describe any alternative solutions or workarounds you have considered.
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add any other context, mock-ups, or examples here.
