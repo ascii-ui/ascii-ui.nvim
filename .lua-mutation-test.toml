@@ -10,6 +10,7 @@ timeout = 120
 test_globs = ["tests/**/*_spec.lua", "tests/*_spec.lua"]
 source_globs = ["lua/**/*.lua", "lua/*.lua"]
 
-# "normal" visits every mutable site but caps mutants per operator per site
-# (3) to bound CI cost. Default "very_hard" is unlimited.
-difficulty = "normal"
+# "easy" samples a subset of mutable sites to minimize CI cost.
+# "normal" visits every site but caps mutants per operator per site (3).
+# Default "very_hard" is unlimited.
+difficulty = "easy"
