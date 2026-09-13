@@ -40,14 +40,44 @@ jobs:
         with:
           version: "0.40.3"
 
+      - name: Restore lmut incremental cache
+        id: lmut-cache-restore
+        # Best-effort: a cache outage must never fail mutation testing.
+        continue-on-error: true
+        uses: actions/cache/restore@v4
+        with:
+          # lmut's incremental cache (mutation-cache.json). lmut validates
+          # entries against current file hashes itself, so restoring a
+          # slightly stale cache is safe: only changed files re-run.
+          path: .lua-mutation-test/cache
+          key: lmut-${{ runner.os }}-0.0.4-${{ hashFiles('lux.lock', 'lux.toml', '.lua-mutation-test.toml') }}
+          restore-keys: |
+            lmut-${{ runner.os }}-0.0.4-
+
       - name: Run mutation testing
         # fail-under: 0 (default) keeps this informational: never blocks
         # PR fast checks, results surface via job summary + annotations.
         # path is repo root: lmut copies PATH per mutant and runs the test
         # command inside the copy, so lux.toml/tests/scripts must be present.
+        # cache: 'true' (action default) reuses the previous lmut.log from
+        # the Actions cache when all run inputs are unchanged: re-runs and
+        # identical pushes finish instantly.
         uses: lua-mutation-test/lua-mutation-test-action@v0
         with:
           version: 0.0.4
           path: .
           test-command: lx test
           config: .lua-mutation-test.toml
+          cache: "true"
+
+      - name: Save lmut incremental cache
+        # Always persist (even on failure): lmut flushes partial results,
+        # so the next run resumes instead of restarting from scratch.
+        # Key is unique per commit; restores match via restore-keys prefix.
+        # Save conflicts (re-runs) are harmless.
+        if: always()
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: .lua-mutation-test/cache
+          key: lmut-${{ runner.os }}-0.0.4-${{ hashFiles('lux.lock', 'lux.toml', '.lua-mutation-test.toml') }}-${{ github.sha }}
