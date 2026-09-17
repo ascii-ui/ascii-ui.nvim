@@ -59,12 +59,20 @@ luacov_start
 if [[ -n $1 ]] && [[ $1 == "--fail-fast" ]]; then
   echo "Running tests with --fail-fast"
   nvim --headless --noplugin -u ${minimal} \
-    -c "PlenaryBustedDirectory tests/ {minimal_init = '${minimal}', sequential = true, keep_going = false}" | tee "${tempfile}"
+    -c "PlenaryBustedDirectory tests/ {minimal_init = '${minimal}', sequential = true, keep_going = false, timeout = 10000}" | tee "${tempfile}"
 elif [[ -n $1 ]]; then
-  nvim --headless --noplugin -u ${minimal} -c "PlenaryBustedFile $1" | tee "${tempfile}"
+  # NOTE: PlenaryBustedFile cannot be used here: the user command is defined
+  # in plugin/plenary.vim, which is never sourced under --noplugin, so nvim
+  # would sit idle forever (E492 + no qa!). test_file() cannot be used
+  # either: it spawns a child nvim without minimal_init, so the child fails
+  # to require plenary. Run the file in-process via busted.run() instead.
+  # 10s timeout comes from the Makefile test-with-timeout.sh wrapper.
+  nvim --headless --noplugin -u ${minimal} -c "lua require('plenary.busted').run('$1')" | tee "${tempfile}"
 else
+  # timeout = 10000: plenary runs each spec file as its own nvim job and
+  # SIGTERMs it after 10s (per-test timeout; plenary has no per-`it` support).
   nvim --headless --noplugin -u ${minimal} \
-    -c "lua require('plenary.test_harness').test_directory('./tests/', { minimal_init = 'tests/minimal.lua', sequential = true })" | tee "${tempfile}"
+    -c "lua require('plenary.test_harness').test_directory('./tests/', { minimal_init = 'tests/minimal.lua', sequential = true, timeout = 10000 })" | tee "${tempfile}"
 fi
 
 luacov_end
