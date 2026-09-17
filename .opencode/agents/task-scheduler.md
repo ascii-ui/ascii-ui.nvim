@@ -84,13 +84,13 @@ Your ONLY capabilities are:
 When delegating to multiple agents simultaneously, each agent MUST work in an isolated workspace to prevent conflicts:
 
 ```bash
-# Each parallel agent gets its own clone under /tmp
-/tmp/ascii-ui-agent1/  # First agent's workspace
-/tmp/ascii-ui-agent2/  # Second agent's workspace
+# Each parallel agent gets its own clone under /tmp — unique per TASK, not per agent slot
+/tmp/ascii-ui-<task1>/  # First task's workspace
+/tmp/ascii-ui-<task2>/  # Second task's workspace
 ```
 
 **Isolation Pattern**:
-1. Agent clones repo to `/tmp/ascii-ui-[agent-name]/`
+1. Agent clones repo to `/tmp/ascii-ui-[task-name]/` (never reuse `/tmp/ascii-ui-agent1|2/` blindly — prior task's branch/dirty files may still be there; verify `git branch --show-current && git status --short` clean first, else fresh-clone)
 2. Creates feature branch: `git checkout -b feature/[task-name]`
 3. Works in isolated directory (no conflicts with other agents)
 4. Pushes branch to origin: `git push -u origin feature/[task-name]`
@@ -360,6 +360,7 @@ If an agent is stuck or blocked:
 
 ## Changelog
 
+- 2026-09-17: Required unique per-task /tmp workspaces with clean-check before reuse (dirty /tmp/ascii-ui-agent1/ collision, PR #102 difficulty)
 - 2026-09-06: Added CI verification caveat — release.yml is dispatch-only; confirm run URL/ID when accepting "pipeline green"
 - 2026-08-09: Updated delegation template to trust pre-commit hooks instead of manual checks
 - 2026-08-08: Added push/verify CI requirements to delegation template. Added parallel agent workspace isolation pattern under /tmp.

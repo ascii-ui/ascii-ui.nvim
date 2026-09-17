@@ -52,6 +52,7 @@ Neovim Floating Window or Stdout
    git rebase origin/main
    ```
    Always work on the latest code. Stale branches cause merge conflicts and wasted effort.
+0.5. **Verify workspace ownership**: `/tmp` workspaces are shared. Run `git branch --show-current && git status --short` first. If branch/dirty files belong to another agent, do NOT touch — work in main checkout or fresh `/tmp/ascii-ui-<task>/` instead, report `[context]` difficulty.
 1. **Understand the context**: Read relevant files, check existing patterns
 2. **Check conventions**: Follow the module pattern, component pattern, naming conventions
 3. **Plan the approach**: Consider how changes affect the fiber tree, rendering, and state
@@ -112,6 +113,8 @@ make test tests/unit/my_spec.lua   # Single file
 ```
 
 **Local != CI**: `make test` uses `scripts/test` (15s timeout wrapper); CI runs `lx test`. Orphaned headless nvim processes from killed runs interact badly with the wrapper timeout — if local results hang or look flaky, check `pgrep -fl nvim` before trusting the run.
+
+**No GNU `timeout` on macOS**: `timeout` cmd absent on Darwin. Never call it directly. Use `make test` (`scripts/test-with-timeout.sh` sleep/kill watchdog, exit 124 on timeout) or plenary `timeout = 10000` opt.
 
 #### Async E2E Testing
 
@@ -427,6 +430,7 @@ Global skills (listed in `available_skills` by the runtime) are general-purpose 
 
 ## Changelog
 
+- 2026-09-17: Documented macOS no-GNU-timeout rule (use test-with-timeout.sh/plenary opt) and dirty /tmp workspace ownership check (from difficulty report PR #102)
 - 2026-09-06: Captured ascii-ui-dev difficulty report (logger race fix): fs-stubbing test pattern over XDG env, CI verification recipe for dispatch-only `release.yml` + `gh api` job-log fallback, persistent-shell background job hygiene, never-throw logger rule, local-vs-CI test divergence note, convention-reviewer delegation fallback
 - 2026-08-09: Updated workflow to trust pre-commit hooks instead of manually running make check/test
 - 2026-08-08: Added async E2E testing guidance (vim.wait pattern), docs generation /tmp workaround (DOC_OUTPUT_FILE), remote verification for /tmp workspaces, PR delegation fallback, and module structure guidance (init.lua pattern for submodules)
