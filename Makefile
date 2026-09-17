@@ -22,7 +22,9 @@ build:
 endif
 
 test: build
-	 bash scripts/test-with-timeout.sh 15 $(filter-out $@, $(MAKECMDGOALS))
+	# Single file: 10s per-test timeout. Full suite: per-file 10s comes from
+	# the plenary harness (scripts/test); 120s here is only a runner backstop.
+	 bash scripts/test-with-timeout.sh $(if $(filter-out $@, $(MAKECMDGOALS)),10,120) $(filter-out $@, $(MAKECMDGOALS))
 
 bench: build
 	bash scripts/bench
