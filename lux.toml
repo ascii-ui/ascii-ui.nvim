@@ -12,12 +12,9 @@ license = "MIT"
 url = "https://github.com/ascii-ui/$(PACKAGE)/archive/refs/tags/v$(VERSION).zip"
 dev = "git+https://github.com/ascii-ui/$(PACKAGE).git"
 
-[dependencies]
-"plenary.nvim" = "scm-1"
-
 [test]
 type = "command"
-command = "./scripts/test_lux"
+command = "./scripts/test"
 
 [build]
 type = "builtin"

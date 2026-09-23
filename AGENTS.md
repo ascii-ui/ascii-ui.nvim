@@ -489,10 +489,10 @@ Directories with multiple files expose an `init.lua` that re-exports the public 
 
 ## Testing
 
-- **Framework**: Plenary.nvim test harness (Busted-style `describe`/`it`/`assert`)
-- **Assertions**: `luassert` — `assert.are.same`, `assert.is_true`, etc.
-- **Every test file** must start with `pcall(require, "luacov")` (enforced by `tests/arch_spec.lua`)
-- **E2E tests** use `plenary.async.tests.it` for async testing
+- **Framework**: mini.test with Busted-style `describe`/`it` emulation (`scripts/minimal_init.lua`)
+- **Assertions**: `tests/assertions.lua` (`eq` for deep equality), plain `assert`, `MiniTest.expect.*`
+- **No plenary/luassert/luacov** in tests (enforced by `tests/arch_spec.lua`)
+- **E2E tests** use plain `it` — cases run synchronously with `vim.wait`
 - **Benchmarks** have hard budget assertions to catch performance regressions
 
 ## Documentation
@@ -505,7 +505,7 @@ Directories with multiple files expose an `init.lua` that re-exports the public 
 
 - **Package manager**: Lux (`lux.toml`)
 - **Runtime**: Lua 5.1 (Neovim's embedded Lua)
-- **Test dependency**: `plenary.nvim` (cloned automatically by `scripts/test`)
+- **Test dependency**: `mini.nvim` (cloned automatically by `scripts/minimal_init.lua`)
 - **Dev tools**: `stylua`, `luacheck`, `nvim`, `git`
 
 ## Commit Policy

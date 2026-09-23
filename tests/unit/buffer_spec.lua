@@ -1,10 +1,7 @@
-pcall(require, "luacov")
----@module "luassert"
-
 local Buffer = require("ascii-ui.buffer")
 local BufferLine = require("ascii-ui.buffer.bufferline")
 local Segment = require("ascii-ui.buffer.segment")
-local eq = assert.are.same
+local eq = require("tests.assertions").eq
 
 describe("buffer", function()
 	it("should be able to create a buffer", function()
@@ -53,7 +50,7 @@ describe("buffer", function()
 			local found_c = next()
 			eq(target_c, found_c)
 
-			assert.is_nil(next())
+			assert(next() == nil)
 		end)
 
 		it("finds next focusable segment from position", function()
@@ -157,7 +154,7 @@ describe("buffer", function()
 			eq(target_c, found_c.segment)
 			eq({ line = 5, col = 1 }, found_c.position)
 
-			assert.is_nil(next())
+			assert(next() == nil)
 		end)
 
 		it("should find segment by id", function()
@@ -192,8 +189,8 @@ describe("buffer", function()
 				BufferLine.new(Segment:new("some segment C"))
 			)
 
-			assert.is_nil(b:find_segment_by_position({ line = math.huge, col = 1 }))
-			assert.is_nil(b:find_segment_by_position({ line = 1, col = math.huge }))
+			assert(b:find_segment_by_position({ line = math.huge, col = 1 }) == nil)
+			assert(b:find_segment_by_position({ line = 1, col = math.huge }) == nil)
 		end)
 	end)
 end)

@@ -40,8 +40,8 @@ luac.out
 *.hex
 
 test/xdg/local/state/nvim
-.tests/site/pack/deps/start/plenary.nvim/plenary.nvim
-.tests/site/pack/deps/start/plenary.nvim
+.dependencies/
+.tests/
 .lux
 .deps
 

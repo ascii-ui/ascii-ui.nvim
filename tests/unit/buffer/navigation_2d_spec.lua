@@ -1,4 +1,4 @@
-pcall(require, "luacov")
+local eq = require("tests.assertions").eq
 
 local Buffer = require("ascii-ui.buffer.buffer")
 local BufferLine = require("ascii-ui.buffer.bufferline")
@@ -31,9 +31,9 @@ describe("2D focus navigation", function()
 			-- NOT Button C (line 2, col 0) which is previous in linear order
 			local result = buffer:find_focusable_above({ line = 2, col = 3 })
 
-			assert.are.equal(true, result.found)
-			assert.are.equal(1, result.pos.line)
-			assert.are.equal(3, result.pos.col)
+			eq(true, result.found)
+			eq(1, result.pos.line)
+			eq(3, result.pos.col)
 		end)
 
 		it("finds focusable above from left column", function()
@@ -43,9 +43,9 @@ describe("2D focus navigation", function()
 			-- Pressing "k" should go to Button A (line 1, col 0)
 			local result = buffer:find_focusable_above({ line = 2, col = 0 })
 
-			assert.are.equal(true, result.found)
-			assert.are.equal(1, result.pos.line)
-			assert.are.equal(0, result.pos.col)
+			eq(true, result.found)
+			eq(1, result.pos.line)
+			eq(0, result.pos.col)
 		end)
 
 		it("returns not found when no focusable above", function()
@@ -55,7 +55,7 @@ describe("2D focus navigation", function()
 			-- Pressing "k" should find nothing
 			local result = buffer:find_focusable_above({ line = 1, col = 0 })
 
-			assert.are.equal(false, result.found)
+			eq(false, result.found)
 		end)
 	end)
 
@@ -67,9 +67,9 @@ describe("2D focus navigation", function()
 			-- Pressing "j" should go to Button C (line 2, col 0)
 			local result = buffer:find_focusable_below({ line = 1, col = 0 })
 
-			assert.are.equal(true, result.found)
-			assert.are.equal(2, result.pos.line)
-			assert.are.equal(0, result.pos.col)
+			eq(true, result.found)
+			eq(2, result.pos.line)
+			eq(0, result.pos.col)
 		end)
 
 		it("finds focusable below from right column", function()
@@ -79,9 +79,9 @@ describe("2D focus navigation", function()
 			-- Pressing "j" should go to Button D (line 2, col 3)
 			local result = buffer:find_focusable_below({ line = 1, col = 3 })
 
-			assert.are.equal(true, result.found)
-			assert.are.equal(2, result.pos.line)
-			assert.are.equal(3, result.pos.col)
+			eq(true, result.found)
+			eq(2, result.pos.line)
+			eq(3, result.pos.col)
 		end)
 
 		it("returns not found when no focusable below", function()
@@ -91,7 +91,7 @@ describe("2D focus navigation", function()
 			-- Pressing "j" should find nothing
 			local result = buffer:find_focusable_below({ line = 2, col = 3 })
 
-			assert.are.equal(false, result.found)
+			eq(false, result.found)
 		end)
 	end)
 
@@ -114,9 +114,9 @@ describe("2D focus navigation", function()
 			-- Should find B (closest to col 6)
 			local result = buffer:find_focusable_above({ line = 2, col = 6 })
 
-			assert.are.equal(true, result.found)
-			assert.are.equal(1, result.pos.line)
-			assert.are.equal(11, result.pos.col)
+			eq(true, result.found)
+			eq(1, result.pos.line)
+			eq(11, result.pos.col)
 		end)
 
 		it("finds closest column when exact column not available below", function()
@@ -136,9 +136,9 @@ describe("2D focus navigation", function()
 			-- C is at col 6 — only option, so should find it
 			local result = buffer:find_focusable_below({ line = 1, col = 11 })
 
-			assert.are.equal(true, result.found)
-			assert.are.equal(2, result.pos.line)
-			assert.are.equal(6, result.pos.col)
+			eq(true, result.found)
+			eq(2, result.pos.line)
+			eq(6, result.pos.col)
 		end)
 	end)
 end)

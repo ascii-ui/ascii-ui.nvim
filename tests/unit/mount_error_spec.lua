@@ -1,5 +1,4 @@
-pcall(require, "luacov")
----@module "luassert"
+local eq = require("tests.assertions").eq
 
 local error_handler = require("ascii-ui.utils.error_handler")
 local fiber = require("ascii-ui.fiber")
@@ -14,9 +13,9 @@ describe("mount-level error handling", function()
 
 			local ok, err = pcall(fiber.render, Broken)
 
-			assert.is_false(ok)
-			assert.truthy(err:find("BrokenReturn"), "error should mention component name")
-			assert.truthy(err:find("expected.*list") or err:find("FiberNode"), "error should mention expected type")
+			assert(not ok)
+			assert(err:find("BrokenReturn"), "error should mention component name")
+			assert(err:find("expected.*list") or err:find("FiberNode"), "error should mention expected type")
 		end)
 
 		it("produces informative error when component returns nil", function()
@@ -26,8 +25,8 @@ describe("mount-level error handling", function()
 
 			local ok, err = pcall(fiber.render, Broken)
 
-			assert.is_false(ok)
-			assert.truthy(err:find("BrokenNil"), "error should mention component name")
+			assert(not ok)
+			assert(err:find("BrokenNil"), "error should mention component name")
 		end)
 
 		it("produces informative error when component returns non-FiberNode table", function()
@@ -37,8 +36,8 @@ describe("mount-level error handling", function()
 
 			local ok, err = pcall(fiber.render, Broken)
 
-			assert.is_false(ok)
-			assert.truthy(err:find("BrokenTable"), "error should mention component name")
+			assert(not ok)
+			assert(err:find("BrokenTable"), "error should mention component name")
 		end)
 	end)
 
@@ -54,10 +53,10 @@ describe("mount-level error handling", function()
 
 			local ok, err = pcall(fiber.render, Outer)
 
-			assert.is_false(ok)
-			assert.truthy(err:find("Outer"), "error should mention Outer")
-			assert.truthy(err:find("Inner"), "error should mention Inner")
-			assert.truthy(err:find("inner error"), "error should contain original message")
+			assert(not ok)
+			assert(err:find("Outer"), "error should mention Outer")
+			assert(err:find("Inner"), "error should mention Inner")
+			assert(err:find("inner error"), "error should contain original message")
 		end)
 
 		it("uses error_handler format for component errors", function()
@@ -67,10 +66,10 @@ describe("mount-level error handling", function()
 
 			local ok, err = pcall(fiber.render, Broken)
 
-			assert.is_false(ok)
+			assert(not ok)
 			-- Should use the new error format
-			assert.truthy(err:find("%[render%]") or err:find("component error"), "error should use new format")
-			assert.truthy(err:find("BrokenComp"), "error should mention component name")
+			assert(err:find("%[render%]") or err:find("component error"), "error should use new format")
+			assert(err:find("BrokenComp"), "error should mention component name")
 		end)
 	end)
 
@@ -83,9 +82,9 @@ describe("mount-level error handling", function()
 
 			local ok, err = pcall(fiber.render, Broken)
 
-			assert.is_false(ok)
-			assert.truthy(err:find("BrokenHook"), "error should mention component name")
-			assert.truthy(err:find("hook error"), "error should contain hook error message")
+			assert(not ok)
+			assert(err:find("BrokenHook"), "error should mention component name")
+			assert(err:find("hook error"), "error should contain hook error message")
 		end)
 	end)
 
@@ -105,11 +104,11 @@ describe("mount-level error handling", function()
 				node:run_pending()
 			end)
 
-			assert.is_false(ok)
-			assert.truthy(err:find("EffectComp"), "error should mention component name")
-			assert.truthy(err:find("effect failed"), "error should contain effect error message")
+			assert(not ok)
+			assert(err:find("EffectComp"), "error should mention component name")
+			assert(err:find("effect failed"), "error should contain effect error message")
 			-- Should use new error format
-			assert.truthy(err:find("%[effect%]") or err:find("effect error"), "error should use new format")
+			assert(err:find("%[effect%]") or err:find("effect error"), "error should use new format")
 		end)
 	end)
 
@@ -118,12 +117,12 @@ describe("mount-level error handling", function()
 			local err = error_handler.create_error("render", "Root > App", "test error")
 			local lines = error_handler.render_error_to_lines(err)
 
-			assert.are.same("table", type(lines))
-			assert.is_true(#lines > 0)
+			eq("table", type(lines))
+			assert(#lines > 0)
 
 			-- All lines should be strings
 			for _, line in ipairs(lines) do
-				assert.are.same("string", type(line))
+				eq("string", type(line))
 			end
 		end)
 
@@ -132,11 +131,11 @@ describe("mount-level error handling", function()
 			local lines = error_handler.render_error_to_lines(err)
 			local display = table.concat(lines, "\n")
 
-			assert.truthy(display:find("RENDER ERROR"))
-			assert.truthy(display:find("render"))
-			assert.truthy(display:find("Root > App > MenuItem"))
-			assert.truthy(display:find("expected list, got string"))
-			assert.truthy(display:find("Hint"))
+			assert(display:find("RENDER ERROR"))
+			assert(display:find("render"))
+			assert(display:find("Root > App > MenuItem"))
+			assert(display:find("expected list, got string"))
+			assert(display:find("Hint"))
 		end)
 	end)
 end)

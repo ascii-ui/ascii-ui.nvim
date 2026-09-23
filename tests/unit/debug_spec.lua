@@ -1,5 +1,4 @@
-pcall(require, "luacov")
----@module "luassert"
+local eq = require("tests.assertions").eq
 
 local ui = require("ascii-ui")
 
@@ -19,7 +18,7 @@ describe("ui.debug", function()
 			end,
 		})
 
-		assert.are.same(component, captured)
+		eq(component, captured)
 	end)
 
 	it("returns the value from mounter", function()
@@ -34,7 +33,7 @@ describe("ui.debug", function()
 			end,
 		})
 
-		assert.are.same(99, bufnr)
+		eq(99, bufnr)
 	end)
 
 	describe("when loader throws", function()
@@ -52,8 +51,8 @@ describe("ui.debug", function()
 				end,
 			})
 
-			assert.is_not_nil(notified)
-			assert.are.same(vim.log.levels.ERROR, notified.level)
+			assert(notified ~= nil)
+			eq(vim.log.levels.ERROR, notified.level)
 		end)
 
 		it("does not call mounter", function()
@@ -66,7 +65,7 @@ describe("ui.debug", function()
 				notifier = function(_) end,
 			})
 
-			assert.is_false(mounter_called)
+			assert(not mounter_called)
 		end)
 
 		it("returns nil", function()
@@ -76,7 +75,7 @@ describe("ui.debug", function()
 				notifier = function(_) end,
 			})
 
-			assert.is_nil(result)
+			assert(result == nil)
 		end)
 	end)
 
@@ -85,8 +84,8 @@ describe("ui.debug", function()
 			local fixture = vim.fn.fnamemodify("tests/util/debug_fixture_comp.lua", ":p")
 			local bufnr = ui.debug(fixture)
 
-			assert.is_number(bufnr)
-			assert.is_true(bufnr > 0)
+			assert(type(bufnr) == "number")
+			assert(bufnr > 0)
 
 			-- wait for the component to render into the buffer
 			local found = vim.wait(1000, function()
@@ -94,7 +93,7 @@ describe("ui.debug", function()
 				local content = table.concat(lines, "\n")
 				return content:find("debug fixture loaded", 1, true) ~= nil
 			end)
-			assert.is_true(found)
+			assert(found)
 		end)
 	end)
 
@@ -121,10 +120,10 @@ describe("ui.debug", function()
 				end,
 			})
 
-			assert.is_not_nil(captured, "expected watcher to be called")
-			assert.are.same(abs, captured.path)
-			assert.are.same(77, captured.bufnr)
-			assert.is_function(captured.reload)
+			assert(captured ~= nil, "expected watcher to be called")
+			eq(abs, captured.path)
+			eq(77, captured.bufnr)
+			assert(type(captured.reload) == "function")
 		end)
 
 		it("calling reload re-runs loader and mounter", function()
@@ -146,14 +145,14 @@ describe("ui.debug", function()
 				end,
 			})
 
-			assert.is_not_nil(captured_reload, "expected watcher to be called with reload fn")
-			assert.are.same(1, load_count)
-			assert.are.same(1, mount_count)
+			assert(captured_reload ~= nil, "expected watcher to be called with reload fn")
+			eq(1, load_count)
+			eq(1, mount_count)
 
 			captured_reload()
 
-			assert.are.same(2, load_count)
-			assert.are.same(2, mount_count)
+			eq(2, load_count)
+			eq(2, mount_count)
 		end)
 
 		it("does not call watcher when loader throws", function()
@@ -170,7 +169,7 @@ describe("ui.debug", function()
 				end,
 			})
 
-			assert.is_false(watcher_called)
+			assert(not watcher_called)
 		end)
 	end)
 end)

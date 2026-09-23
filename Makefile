@@ -22,8 +22,8 @@ build:
 endif
 
 test: build
-	# Single file: 10s per-test timeout. Full suite: per-file 10s comes from
-	# the plenary harness (scripts/test); 120s here is only a runner backstop.
+	# Single file: MiniTest.run() with a find_files override. Full suite:
+	# 120s here is only a runner backstop.
 	 bash scripts/test-with-timeout.sh $(if $(filter-out $@, $(MAKECMDGOALS)),10,120) $(filter-out $@, $(MAKECMDGOALS))
 
 bench: build

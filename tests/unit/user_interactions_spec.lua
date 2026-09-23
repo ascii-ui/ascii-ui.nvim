@@ -1,8 +1,6 @@
-pcall(require, "luacov")
----@module "luassert"
 local INTERACTION_TYPE = require("ascii-ui.interaction_type")
 
-local eq = assert.are.same
+local eq = require("tests.assertions").eq
 
 local Buffer = require("ascii-ui.buffer")
 local Bufferline = require("ascii-ui.buffer.bufferline")
@@ -87,9 +85,9 @@ describe("UserInteractions", function()
 			interaction_type = INTERACTION_TYPE.SELECT,
 		})
 
-		assert.is_false(ok)
-		assert.truthy(err:find("SELECT"), "error should mention the interaction type")
-		assert.truthy(err:find("boom"), "error should contain the original error reason")
+		assert(not ok)
+		assert(err:find("SELECT"), "error should mention the interaction type")
+		assert(err:find("boom"), "error should contain the original error reason")
 	end)
 
 	it("does nothing when buffer is not found", function()

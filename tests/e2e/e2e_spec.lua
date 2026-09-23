@@ -1,9 +1,5 @@
-pcall(require, "luacov")
----@module "luassert"
-
 local ui = require("ascii-ui")
 local Select = ui.components.Select
-local it = require("plenary.async.tests").it
 local Paragraph = ui.components.Paragraph
 local Slider = ui.components.Slider
 local useState = ui.hooks.useState

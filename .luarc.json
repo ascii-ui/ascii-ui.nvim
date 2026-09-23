@@ -4,7 +4,8 @@
     "describe",
     "it",
     "before_each",
-    "after_each"
+    "after_each",
+    "MiniTest"
   ],
   "runtime": {
     "version": "LuaJIT",
@@ -15,10 +16,7 @@
   },
   "workspace": {
     "library": [
-      "./lua",
-      ".lux/5.1/4e9592a499c9ced4f8ce366db9db7d9c0dd1424ea8d4c8c16c1550ea3a61a696-say@1.4.1-3/src",
-      ".lux/5.1/acdfde00d122aac481c18c906d483478bb536741beb025becc11782a075d125b-luassert@1.9.0-1/src",
-      ".lux/5.1/e979389dab6913034a620a7b176733ae22e6b46a6233b7aba9221c0aa611aead-plenary.nvim@scm-1/src"
+      "./lua"
     ]
   }
 }

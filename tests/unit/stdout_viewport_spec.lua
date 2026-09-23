@@ -1,11 +1,9 @@
-pcall(require, "luacov")
-
 local Buffer = require("ascii-ui.buffer")
 local Bufferline = require("ascii-ui.buffer.bufferline")
 local Segment = require("ascii-ui.buffer.segment")
 local StdoutViewport = require("ascii-ui.viewports.stdout")
 
-local eq = assert.are.same
+local eq = require("tests.assertions").eq
 
 --- Returns a writer spy and a function to retrieve captured output.
 local function make_writer()
@@ -33,8 +31,8 @@ describe("StdoutViewport", function()
 			vp:update(Buffer.from_lines({ "hello", "world" }))
 
 			local plain = strip_ansi(output())
-			assert.is_truthy(plain:find("hello", 1, true))
-			assert.is_truthy(plain:find("world", 1, true))
+			assert(plain:find("hello", 1, true))
+			assert(plain:find("world", 1, true))
 		end)
 
 		it("emits ANSI fg truecolor code for a colored segment", function()
@@ -45,7 +43,7 @@ describe("StdoutViewport", function()
 			vp:update(buf)
 
 			-- ESC[38;2;255;0;0m  (fg truecolor for #ff0000)
-			assert.is_truthy(output():find("\027%[38;2;255;0;0m", 1))
+			assert(output():find("\027%[38;2;255;0;0m", 1))
 		end)
 
 		it("emits ANSI bg truecolor code for a colored segment", function()
@@ -56,7 +54,7 @@ describe("StdoutViewport", function()
 			vp:update(buf)
 
 			-- ESC[48;2;0;0;255m  (bg truecolor for #0000ff)
-			assert.is_truthy(output():find("\027%[48;2;0;0;255m", 1))
+			assert(output():find("\027%[48;2;0;0;255m", 1))
 		end)
 
 		it("resets color after each colored segment", function()
@@ -69,9 +67,9 @@ describe("StdoutViewport", function()
 			local out = output()
 			local color_pos = out:find("\027%[38;2;0;255;0m", 1)
 			local reset_pos = out:find("\027%[0m", 1)
-			assert.is_truthy(color_pos)
-			assert.is_truthy(reset_pos)
-			assert.is_true(reset_pos > color_pos)
+			assert(color_pos)
+			assert(reset_pos)
+			assert(reset_pos > color_pos)
 		end)
 
 		it("does not emit ANSI codes for plain segments", function()

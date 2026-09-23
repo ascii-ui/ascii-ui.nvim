@@ -1,9 +1,6 @@
-pcall(require, "luacov")
----@module "luassert"
-
 local strict_throttle = require("ascii-ui.utils.strict_throttle")
 
-local eq = assert.are.same
+local eq = require("tests.assertions").eq
 
 describe("throttle", function()
 	it("calls the function immediately on the first call", function()

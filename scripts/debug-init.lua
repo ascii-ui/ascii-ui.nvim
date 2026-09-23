@@ -30,7 +30,7 @@ vim.opt.signcolumn = "no"
 vim.opt.swapfile = false
 
 -- ─── make plugin modules findable ─────────────────────────────────────────────
--- Mirrors what tests/minimal.lua does for the test suite.
+-- Mirrors what scripts/minimal_init.lua does for the test suite.
 local function add_to_luapath(dir)
 	package.path = table.concat({
 		dir .. "/?.lua",

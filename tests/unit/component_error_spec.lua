@@ -1,6 +1,3 @@
-pcall(require, "luacov")
----@module "luassert"
-
 local fiber = require("ascii-ui.fiber")
 local ui = require("ascii-ui")
 
@@ -12,9 +9,9 @@ describe("component error reporting", function()
 
 		local ok, err = pcall(fiber.render, Broken)
 
-		assert.is_false(ok)
-		assert.truthy(err:find("Broken"), "error should mention the component name 'Broken'")
-		assert.truthy(err:find("something went wrong"), "error should contain the original error reason")
+		assert(not ok)
+		assert(err:find("Broken"), "error should mention the component name 'Broken'")
+		assert(err:find("something went wrong"), "error should contain the original error reason")
 	end)
 
 	it("shows the full component path when a nested component fails", function()
@@ -28,10 +25,10 @@ describe("component error reporting", function()
 
 		local ok, err = pcall(fiber.render, Outer)
 
-		assert.is_false(ok)
-		assert.truthy(err:find("Outer"), "error should mention the outer component 'Outer'")
-		assert.truthy(err:find("Inner"), "error should mention the inner component 'Inner'")
-		assert.truthy(err:find("inner broke"), "error should contain the original error reason")
+		assert(not ok)
+		assert(err:find("Outer"), "error should mention the outer component 'Outer'")
+		assert(err:find("Inner"), "error should mention the inner component 'Inner'")
+		assert(err:find("inner broke"), "error should contain the original error reason")
 	end)
 
 	it("shows a three-level deep component path", function()
@@ -49,10 +46,10 @@ describe("component error reporting", function()
 
 		local ok, err = pcall(fiber.render, Root)
 
-		assert.is_false(ok)
-		assert.truthy(err:find("Root"), "error should mention Root")
-		assert.truthy(err:find("Middle"), "error should mention Middle")
-		assert.truthy(err:find("Leaf"), "error should mention Leaf")
-		assert.truthy(err:find("leaf error"), "error should contain original reason")
+		assert(not ok)
+		assert(err:find("Root"), "error should mention Root")
+		assert(err:find("Middle"), "error should mention Middle")
+		assert(err:find("Leaf"), "error should mention Leaf")
+		assert(err:find("leaf error"), "error should contain original reason")
 	end)
 end)

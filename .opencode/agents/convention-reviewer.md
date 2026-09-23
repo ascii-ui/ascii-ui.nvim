@@ -42,7 +42,7 @@ Focus your review on things that cannot be automated:
 - **Naming conventions** — filenames, classes, hooks, test files
 - **Module pattern** — `__index`, `new()`, `is_module()`, `return ModuleName`
 - **Component pattern** — uses `createComponent(name, fn, types)` correctly
-- **Test patterns** — `pcall(require, "luacov")`, `describe`/`it`/`assert`
+- **Test patterns** — `describe`/`it`, `tests/assertions.lua` (`eq`), plain `assert` (no plenary/luassert/luacov)
 - **LuaCATS annotations** — `@class`, `@field`, `@param`, `@return` with `ascii-ui.` prefix
 - **Architecture patterns** — proper separation of concerns, dependency injection
 - **API design** — consistent prop names, callback patterns
@@ -107,10 +107,9 @@ Check for:
 
 ### 4. Test Requirements
 
-- [ ] **First line**: `pcall(require, "luacov")` (enforced by `tests/arch_spec.lua`)
-- [ ] **Framework**: Plenary.nvim Busted-style (`describe`/`it`/`assert`)
-- [ ] **Assertions**: `luassert` — `assert.are.same`, `assert.is_true`, etc.
-- [ ] **E2E tests**: use `plenary.async.tests.it` for async
+- [ ] **Framework**: mini.test Busted-style (`describe`/`it`, no plenary/luassert/luacov — enforced by `tests/arch_spec.lua`)
+- [ ] **Assertions**: `tests/assertions.lua` (`eq`), plain `assert`, `MiniTest.expect.*`
+- [ ] **E2E tests**: use plain `it` with `vim.wait`
 - [ ] **Benchmarks**: include hard budget assertions
 
 ### 5. Type Annotations
@@ -175,8 +174,8 @@ When reviewing changes, check for proper DI patterns:
    **Expected**: Module pattern requires `is_module()` type guard
 
 2. **File**: `tests/unit/my_component_spec.lua:1`
-   **Issue**: Missing `pcall(require, "luacov")` as first line
-   **Expected**: All test files must start with luacov import
+   **Issue**: Test file requires plenary
+   **Expected**: Tests use mini.test (`describe`/`it`) with no plenary/luassert/luacov imports
 
 ### Architecture Concerns
 

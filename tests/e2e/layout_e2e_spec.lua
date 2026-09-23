@@ -1,6 +1,3 @@
-pcall(require, "luacov")
----@module "luassert"
-
 local ui = require("ascii-ui")
 local Button = ui.components.Button
 local Paragraph = ui.components.Paragraph
@@ -107,9 +104,9 @@ describe("layout e2e", function()
 					found_line3 = true
 				end
 			end
-			assert.is_true(found_line1)
-			assert.is_true(found_line2)
-			assert.is_true(found_line3)
+			assert(found_line1)
+			assert(found_line2)
+			assert(found_line3)
 		end)
 
 		it("handles state updates in Column children", function()

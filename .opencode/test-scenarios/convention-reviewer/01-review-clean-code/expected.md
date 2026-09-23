@@ -47,6 +47,6 @@ OR
 - [ ] Naming conventions (snake_case files, PascalCase classes)
 - [ ] Module pattern (__index, new(), is_module())
 - [ ] Type annotations (LuaCATS format)
-- [ ] Test requirements (luacov import, plenary framework)
+- [ ] Test requirements (mini.test framework, no plenary/luassert/luacov)
 - [ ] Documentation (if public API)
 - [ ] File organization (correct directories)

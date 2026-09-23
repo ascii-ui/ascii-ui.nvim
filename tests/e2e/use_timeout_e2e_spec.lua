@@ -1,8 +1,4 @@
-pcall(require, "luacov")
----@module "luassert"
-
-local async = require("plenary.async")
-local async_it = async.tests.it
+local eq = require("tests.assertions").eq
 
 local ui = require("ascii-ui")
 local Paragraph = ui.components.Paragraph
@@ -10,7 +6,7 @@ local useTimeout = ui.hooks.useTimeout
 local testing_e2e = require("ascii-ui.testing.e2e")
 
 describe("useTimeout", function()
-	async_it("cleans up timers on unmount", function()
+	it("cleans up timers on unmount", function()
 		local callback_called = false
 
 		local App = ui.createComponent("App", function()
@@ -32,10 +28,10 @@ describe("useTimeout", function()
 		end)
 
 		-- The callback should NOT have been called because the timer was cancelled
-		assert.is_false(callback_called)
+		assert(not callback_called)
 	end)
 
-	async_it("fires callback when not unmounted", function()
+	it("fires callback when not unmounted", function()
 		local callback_called = false
 
 		local App = ui.createComponent("App", function()
@@ -53,13 +49,13 @@ describe("useTimeout", function()
 			return callback_called
 		end)
 
-		assert.is_true(callback_called)
+		assert(callback_called)
 
 		-- Clean up
 		screen:unmount()
 	end)
 
-	async_it("cleans up useInterval timers on unmount", function()
+	it("cleans up useInterval timers on unmount", function()
 		local useInterval = ui.hooks.useInterval
 		local call_count = 0
 
@@ -79,7 +75,7 @@ describe("useTimeout", function()
 		end)
 
 		local count_before_unmount = call_count
-		assert.is_true(count_before_unmount >= 2, "interval should have fired at least twice")
+		assert(count_before_unmount >= 2, "interval should have fired at least twice")
 
 		-- Unmount
 		screen:unmount()
@@ -89,6 +85,6 @@ describe("useTimeout", function()
 			return false
 		end)
 
-		assert.are.equal(count_before_unmount, call_count)
+		eq(count_before_unmount, call_count)
 	end)
 end)

@@ -1,9 +1,4 @@
-pcall(require, "luacov")
----@module "luassert"
----
----
-
-local MINIMAL_CONFIG = "tests/minimal.lua"
+local MINIMAL_CONFIG = "scripts/minimal_init.lua"
 
 local function run(filename)
 	local handle = assert(io.popen(("nvim -u %s -l %s "):format(MINIMAL_CONFIG, filename)))

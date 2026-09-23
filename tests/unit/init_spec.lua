@@ -1,6 +1,3 @@
-pcall(require, "luacov")
----@module "luassert"
-
 local Box = require("ascii-ui.components.box")
 local ui = require("ascii-ui")
 

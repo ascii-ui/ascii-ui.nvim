@@ -1,8 +1,4 @@
-pcall(require, "luacov")
----@module "luassert"
-
-local async = require("plenary.async")
-local async_it = async.tests.it
+local eq = require("tests.assertions").eq
 
 local ui = require("ascii-ui")
 local Paragraph = ui.components.Paragraph
@@ -11,7 +7,7 @@ local useState = ui.hooks.useState
 local testing_e2e = require("ascii-ui.testing.e2e")
 
 describe("useTimeout with dynamic delays", function()
-	async_it("starts timer when delay changes from nil to value", function()
+	it("starts timer when delay changes from nil to value", function()
 		local callback_called = false
 		local set_should_start
 
@@ -32,7 +28,7 @@ describe("useTimeout with dynamic delays", function()
 		vim.wait(100, function()
 			return false
 		end)
-		assert.is_false(callback_called, "callback should not be called when delay is nil")
+		assert(not callback_called, "callback should not be called when delay is nil")
 
 		-- Change state so delay becomes 50ms
 		set_should_start(true)
@@ -42,13 +38,13 @@ describe("useTimeout with dynamic delays", function()
 			return callback_called
 		end)
 
-		assert.is_true(callback_called, "callback should be called after delay changes to 50ms")
+		assert(callback_called, "callback should be called after delay changes to 50ms")
 
 		-- Clean up
 		screen:unmount()
 	end)
 
-	async_it("cancels timer when delay changes from value to nil", function()
+	it("cancels timer when delay changes from value to nil", function()
 		local callback_called = false
 		local set_should_start
 
@@ -77,13 +73,13 @@ describe("useTimeout with dynamic delays", function()
 		end)
 
 		-- The callback should NOT have been called because the timer was cancelled
-		assert.is_false(callback_called, "callback should not be called after delay changes to nil")
+		assert(not callback_called, "callback should not be called after delay changes to nil")
 
 		-- Clean up
 		screen:unmount()
 	end)
 
-	async_it("restarts timer when delay value changes", function()
+	it("restarts timer when delay value changes", function()
 		local callback_count = 0
 		local set_delay
 
@@ -104,7 +100,7 @@ describe("useTimeout with dynamic delays", function()
 		vim.wait(200, function()
 			return callback_count >= 1
 		end)
-		assert.are.equal(1, callback_count, "callback should be called once after first delay")
+		eq(1, callback_count, "callback should be called once after first delay")
 
 		-- Change delay to a different value
 		set_delay(50)
@@ -113,7 +109,7 @@ describe("useTimeout with dynamic delays", function()
 		vim.wait(200, function()
 			return callback_count >= 2
 		end)
-		assert.are.equal(2, callback_count, "callback should be called again after delay changes")
+		eq(2, callback_count, "callback should be called again after delay changes")
 
 		-- Clean up
 		screen:unmount()

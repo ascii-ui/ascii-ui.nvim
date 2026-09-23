@@ -110,7 +110,7 @@ Co-authored-by: OpenCode (kimi-k2.7-code) <noreply@opencode.ai>
 
 ## Testing requirements
 
-- The test framework is [plenary.nvim](https://github.com/nvim-lua/plenary.nvim) (Busted-style).
+- The test framework is [mini.test](https://nvim-mini.org/mini.nvim/readmes/mini-test) (Busted-style `describe`/`it`, see `scripts/minimal_init.lua`).
 - Every new component or hook needs unit tests.
 - Every bug fix should include a regression test.
 - Run `make test` before pushing.
