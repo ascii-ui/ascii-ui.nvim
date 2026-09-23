@@ -53,6 +53,9 @@ debug/
 doc/ascii-ui-*.txt
 !doc/ascii-ui.txt
 
+# lmut incremental cache — restored via actions/cache in CI, never committed
+.lua-mutation-test/
+
 # Playwright MCP artifacts
 .playwright-mcp/
 
