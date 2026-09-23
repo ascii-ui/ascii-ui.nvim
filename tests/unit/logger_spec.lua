@@ -1,5 +1,4 @@
-pcall(require, "luacov")
----@module "luassert"
+local eq = require("tests.assertions").eq
 
 -- This spec intentionally stubs vim.fn.isdirectory/mkdir and sets
 -- vim.env.GITHUB_ACTIONS to exercise the logger's file-system paths.
@@ -62,7 +61,7 @@ describe("Logger", function()
 			-- On Actions the logger never writes to a file, so it must not
 			-- touch the filesystem at all (parallel test workers sharing one
 			-- data directory otherwise race on directory creation).
-			assert.are.equal(0, mkdir_calls)
+			eq(0, mkdir_calls)
 		end)
 	end)
 
@@ -74,7 +73,7 @@ describe("Logger", function()
 
 			logger.debug("wrote to file")
 
-			assert.are.equal(1, mkdir_calls)
+			eq(1, mkdir_calls)
 		end)
 
 		it("does not raise when mkdir loses the directory creation race", function()
@@ -91,7 +90,7 @@ describe("Logger", function()
 
 			local ok, err = pcall(logger.debug, "should not crash")
 
-			assert.is_true(ok, "logging must never throw: " .. tostring(err))
+			assert(ok, "logging must never throw: " .. tostring(err))
 		end)
 	end)
 end)

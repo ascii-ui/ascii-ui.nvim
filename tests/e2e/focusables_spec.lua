@@ -1,11 +1,7 @@
-pcall(require, "luacov")
----@module "luassert"
-
-local ui = require("ascii-ui")
-local it = require("plenary.async.tests").it
 local Bufferline = require("ascii-ui.buffer.bufferline")
 local Segment = require("ascii-ui.buffer.segment")
 local testing_e2e = require("ascii-ui.testing.e2e")
+local ui = require("ascii-ui")
 
 describe("Focusable", function()
 	it("when user moves cursor jumps to focusables (UP and DOWN)", function()

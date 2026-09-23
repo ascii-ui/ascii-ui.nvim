@@ -1,6 +1,3 @@
-pcall(require, "luacov")
----@module "luassert"
-
 local ui = require("ascii-ui")
 local Paragraph = ui.components.Paragraph
 local Button = ui.components.Button

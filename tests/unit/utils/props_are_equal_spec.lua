@@ -1,9 +1,6 @@
-pcall(require, "luacov")
----@module "luassert"
-
 local props_are_equal = require("ascii-ui.utils.props_are_equal")
 
-local eq = assert.are.same
+local eq = require("tests.assertions").eq
 
 describe("props_are_equal function", function()
 	it("not equals when differing on functions", function()

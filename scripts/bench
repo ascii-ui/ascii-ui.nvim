@@ -1,38 +1,16 @@
 #!/bin/bash
-# Run performance benchmarks.
-# Mirrors scripts/test but targets tests/bench/ only and does not fail
-# the run on luacov absence.
+# Run performance benchmarks using mini.test (setup handled by
+# scripts/minimal_init.lua). Targets tests/bench/ only.
 
-tempfile=$(mktemp)
-minimal="tests/minimal.lua"
-plugins_dir="./.tests/site/pack/deps/start"
+NVIM=${NVIM:-nvim}
+INIT=${INIT:-scripts/minimal_init.lua}
 
-function setup_environment() {
-  if [[ ! -d "${plugins_dir}" ]]; then
-    mkdir -p "${plugins_dir}"
-  fi
-
-  if [[ ! -d "${plugins_dir}/plenary.nvim" ]]; then
-    echo "[bench] installing plenary.nvim..."
-    git clone https://github.com/nvim-lua/plenary.nvim "${plugins_dir}/plenary.nvim"
-    local -r plenary_353_patch="$(pwd)/scripts/plenary-353.patch"
-    git -C "${plugins_dir}/plenary.nvim" apply "${plenary_353_patch}"
-  fi
-}
-
-setup_environment
-
-nvim --headless --noplugin -u "${minimal}" \
-  -c "lua require('plenary.test_harness').test_directory('./tests/bench/', { minimal_init = '${minimal}', sequential = true })" \
-  | tee "${tempfile}"
-
-errors=$(sed 's/\x1b\[[0-9;]*m//g' "${tempfile}" | awk '/(Errors|Failed) :/ {print $3}' | grep -v '0')
-
-rm "${tempfile}"
-
-if [[ -n $errors ]]; then
-  echo "Benchmarks failed (budget exceeded or error)"
-  exit 1
+if [[ -n $1 ]]; then
+  echo "Running single benchmark file: $1"
+  $NVIM --headless --noplugin -u "$INIT" \
+    -c "lua MiniTest.run({ collect = { find_files = function() return { '$1' } end } })"
+else
+  echo "Running all benchmarks"
+  $NVIM --headless --noplugin -u "$INIT" \
+    -c "lua MiniTest.run({ collect = { find_files = function() return vim.fn.globpath('tests/bench', '**/*_spec.lua', true, true) end } })"
 fi
-
-exit 0

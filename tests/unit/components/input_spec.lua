@@ -1,7 +1,4 @@
-pcall(require, "luacov")
----@module "luassert"
-
-local eq = assert.are.same
+local eq = require("tests.assertions").eq
 
 local Input = require("ascii-ui.components.input")
 local testing = require("ascii-ui.testing")
@@ -67,8 +64,8 @@ describe("Input", function()
 		end))
 
 		local segment = screen:getFocusable()
-		assert.is_not_nil(segment._input_callbacks)
-		assert.is_function(segment._input_callbacks.state_setter)
+		assert(segment._input_callbacks ~= nil)
+		assert(type(segment._input_callbacks.state_setter) == "function")
 	end)
 
 	it("state_setter updates value", function()
@@ -101,11 +98,11 @@ describe("Input", function()
 		end))
 
 		local segment = screen:getFocusable()
-		assert.is_function(segment._input_callbacks.on_change)
+		assert(type(segment._input_callbacks.on_change) == "function")
 
 		-- Call on_change
 		segment._input_callbacks.on_change("new value")
-		assert.is_true(change_called)
+		assert(change_called)
 		eq("new value", change_value)
 	end)
 
@@ -124,11 +121,11 @@ describe("Input", function()
 		end))
 
 		local segment = screen:getFocusable()
-		assert.is_function(segment._input_callbacks.on_submit)
+		assert(type(segment._input_callbacks.on_submit) == "function")
 
 		-- Call on_submit
 		segment._input_callbacks.on_submit("submitted value")
-		assert.is_true(submit_called)
+		assert(submit_called)
 		eq("submitted value", submit_value)
 	end)
 
@@ -147,11 +144,11 @@ describe("Input", function()
 		end))
 
 		local segment = screen:getFocusable()
-		assert.is_function(segment._input_callbacks.on_blur)
+		assert(type(segment._input_callbacks.on_blur) == "function")
 
 		-- Call on_blur
 		segment._input_callbacks.on_blur("blurred value")
-		assert.is_true(blur_called)
+		assert(blur_called)
 		eq("blurred value", blur_value)
 	end)
 

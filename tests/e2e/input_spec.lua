@@ -1,7 +1,3 @@
-pcall(require, "luacov")
----@module "luassert"
-
-local it = require("plenary.async.tests").it
 local testing_e2e = require("ascii-ui.testing.e2e")
 local ui = require("ascii-ui")
 local Input = ui.components.Input

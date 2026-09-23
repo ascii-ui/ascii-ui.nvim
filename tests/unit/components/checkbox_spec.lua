@@ -1,7 +1,4 @@
-pcall(require, "luacov")
----@module "luassert"
-
-local eq = assert.are.same
+local eq = require("tests.assertions").eq
 
 local Checkbox = require("ascii-ui.components.checkbox")
 local testing = require("ascii-ui.testing")

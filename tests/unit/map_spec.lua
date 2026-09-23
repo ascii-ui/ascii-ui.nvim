@@ -1,7 +1,5 @@
-pcall(require, "luacov")
-
 local ui = require("ascii-ui")
-local eq = assert.are.same
+local eq = require("tests.assertions").eq
 
 describe("ui.map", function()
 	local MyComponent = ui.createComponent("MyComponent", function(props)

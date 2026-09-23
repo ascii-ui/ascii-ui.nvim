@@ -48,5 +48,3 @@ jobs:
           LUAROCKS_API_KEY: ${{ secrets.LUX_API_KEY }}
         with:
           version: ${{ env.LUAROCKS_VERSION }}
-          dependencies: |
-            plenary.nvim

@@ -1,6 +1,3 @@
-pcall(require, "luacov")
----@module "luassert"
-
 local FiberNode = require("ascii-ui.fibernode")
 
 describe("FiberNode:run_pending error reporting", function()
@@ -18,9 +15,9 @@ describe("FiberNode:run_pending error reporting", function()
 			node:run_pending()
 		end)
 
-		assert.is_false(ok)
-		assert.truthy(err:find("Slider"), "error should mention the component name 'Slider'")
-		assert.truthy(err:find("effect exploded"), "error should contain the original reason")
+		assert(not ok)
+		assert(err:find("Slider"), "error should mention the component name 'Slider'")
+		assert(err:find("effect exploded"), "error should contain the original reason")
 	end)
 
 	it("reports the component name when a repeating effect throws", function()
@@ -35,9 +32,9 @@ describe("FiberNode:run_pending error reporting", function()
 			node:run_pending()
 		end)
 
-		assert.is_false(ok)
-		assert.truthy(err:find("MyComp"), "error should mention the component name 'MyComp'")
-		assert.truthy(err:find("repeating boom"), "error should contain the original reason")
+		assert(not ok)
+		assert(err:find("MyComp"), "error should mention the component name 'MyComp'")
+		assert(err:find("repeating boom"), "error should contain the original reason")
 	end)
 
 	it("reports the component name when a pending cleanup throws", function()
@@ -52,8 +49,8 @@ describe("FiberNode:run_pending error reporting", function()
 			node:run_pending()
 		end)
 
-		assert.is_false(ok)
-		assert.truthy(err:find("Button"), "error should mention the component name 'Button'")
-		assert.truthy(err:find("cleanup failed"), "error should contain the original reason")
+		assert(not ok)
+		assert(err:find("Button"), "error should mention the component name 'Button'")
+		assert(err:find("cleanup failed"), "error should contain the original reason")
 	end)
 end)

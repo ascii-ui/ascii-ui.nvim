@@ -1,4 +1,4 @@
-pcall(require, "luacov")
+local eq = require("tests.assertions").eq
 
 local Command = require("ascii-ui.commands")
 local EventBus = require("ascii-ui.events")
@@ -18,9 +18,9 @@ describe("EventBus command system", function()
 			local cmd = Command.CloseWindow({ window_id = 42 })
 			bus:dispatch(cmd)
 
-			assert.is_true(called)
-			assert.are.equal(cmd, received_command)
-			assert.are.equal(42, received_command.window_id)
+			assert(called)
+			eq(cmd, received_command)
+			eq(42, received_command.window_id)
 		end)
 
 		it("dispatch calls multiple handlers for same command type", function()
@@ -36,7 +36,7 @@ describe("EventBus command system", function()
 
 			bus:dispatch(Command.Select({ window_id = 1, position = { line = 1, col = 0 } }))
 
-			assert.are.equal(2, call_count)
+			eq(2, call_count)
 		end)
 
 		it("dispatch does not call handlers for different command types", function()
@@ -49,7 +49,7 @@ describe("EventBus command system", function()
 
 			bus:dispatch(Command.Select({ window_id = 1, position = { line = 1, col = 0 } }))
 
-			assert.is_false(called)
+			assert(not called)
 		end)
 
 		it("dispatch handles no handlers gracefully", function()
@@ -80,27 +80,27 @@ describe("EventBus command system", function()
 			-- Should not throw, and second handler should still be called
 			bus:dispatch(Command.Select({ window_id = 1, position = { line = 1, col = 0 } }))
 
-			assert.is_true(second_handler_called)
+			assert(second_handler_called)
 		end)
 	end)
 
 	describe("on validation", function()
 		it("on requires non-empty string command_type", function()
 			local bus = EventBus.new()
-			assert.has_error(function()
+			MiniTest.expect.error(function()
 				bus:on("", function() end)
 			end)
-			assert.has_error(function()
+			MiniTest.expect.error(function()
 				bus:on(nil, function() end)
 			end)
 		end)
 
 		it("on requires function handler", function()
 			local bus = EventBus.new()
-			assert.has_error(function()
+			MiniTest.expect.error(function()
 				bus:on("SELECT", "not a function")
 			end)
-			assert.has_error(function()
+			MiniTest.expect.error(function()
 				bus:on("SELECT", nil)
 			end)
 		end)
@@ -117,9 +117,9 @@ describe("EventBus command system", function()
 			bus:dispatch(cmd2)
 
 			local history = bus:history()
-			assert.are.equal(2, #history)
-			assert.are.equal(cmd1, history[1])
-			assert.are.equal(cmd2, history[2])
+			eq(2, #history)
+			eq(cmd1, history[1])
+			eq(cmd2, history[2])
 		end)
 
 		it("history returns a copy (not the internal array)", function()
@@ -129,14 +129,16 @@ describe("EventBus command system", function()
 			local history1 = bus:history()
 			local history2 = bus:history()
 
-			assert.are_not.equal(history1, history2)
-			assert.are.same(history1, history2)
+			-- `~=` checks identity: two calls must return different tables
+			-- with deeply equal contents.
+			assert(history1 ~= history2)
+			eq(history1, history2)
 		end)
 
 		it("history is empty initially", function()
 			local bus = EventBus.new()
 			local history = bus:history()
-			assert.are.equal(0, #history)
+			eq(0, #history)
 		end)
 	end)
 
@@ -151,7 +153,7 @@ describe("EventBus command system", function()
 
 			bus:trigger("state_change")
 
-			assert.is_true(called)
+			assert(called)
 		end)
 
 		it("clear removes all listeners including command handlers", function()
@@ -171,17 +173,17 @@ describe("EventBus command system", function()
 			bus:dispatch(Command.Select({ window_id = 1, position = { line = 1, col = 0 } }))
 			bus:trigger("state_change")
 
-			assert.is_false(command_called)
-			assert.is_false(event_called)
+			assert(not command_called)
+			assert(not event_called)
 		end)
 
 		it("clear resets history", function()
 			local bus = EventBus.new()
 			bus:dispatch(Command.CloseWindow({ window_id = 1 }))
-			assert.are.equal(1, #bus:history())
+			eq(1, #bus:history())
 
 			bus:clear()
-			assert.are.equal(0, #bus:history())
+			eq(0, #bus:history())
 		end)
 	end)
 end)

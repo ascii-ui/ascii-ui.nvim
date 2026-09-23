@@ -1,8 +1,4 @@
-pcall(require, "luacov")
----@module "luassert"
-
-local async = require("plenary.async")
-local async_it = async.tests.it
+local eq = require("tests.assertions").eq
 
 local ui = require("ascii-ui")
 local Paragraph = ui.components.Paragraph
@@ -11,7 +7,7 @@ local useState = ui.hooks.useState
 local testing_e2e = require("ascii-ui.testing.e2e")
 
 describe("useEffect dependency tracking", function()
-	async_it("re-runs effect when dependencies change", function()
+	it("re-runs effect when dependencies change", function()
 		local effect_count = 0
 		local setDelay
 
@@ -33,7 +29,7 @@ describe("useEffect dependency tracking", function()
 			return effect_count >= 1
 		end)
 
-		assert.are.equal(1, effect_count, "effect should run once initially")
+		eq(1, effect_count, "effect should run once initially")
 
 		-- Change the dependency
 		setDelay(200)
@@ -43,13 +39,13 @@ describe("useEffect dependency tracking", function()
 			return effect_count >= 2
 		end)
 
-		assert.are.equal(2, effect_count, "effect should re-run when dependency changes")
+		eq(2, effect_count, "effect should re-run when dependency changes")
 
 		-- Clean up
 		screen:unmount()
 	end)
 
-	async_it("re-runs effect when dependency changes from nil to value", function()
+	it("re-runs effect when dependency changes from nil to value", function()
 		local effect_count = 0
 		local setDelay
 
@@ -71,7 +67,7 @@ describe("useEffect dependency tracking", function()
 			return effect_count >= 1
 		end)
 
-		assert.are.equal(1, effect_count, "effect should run once initially")
+		eq(1, effect_count, "effect should run once initially")
 
 		-- Change the dependency from nil to a value
 		setDelay(600)
@@ -81,7 +77,7 @@ describe("useEffect dependency tracking", function()
 			return effect_count >= 2
 		end)
 
-		assert.are.equal(2, effect_count, "effect should re-run when dependency changes from nil to value")
+		eq(2, effect_count, "effect should re-run when dependency changes from nil to value")
 
 		-- Clean up
 		screen:unmount()

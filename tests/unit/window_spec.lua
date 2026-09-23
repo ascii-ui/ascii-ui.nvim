@@ -1,4 +1,3 @@
-pcall(require, "luacov")
 local Buffer = require("ascii-ui.buffer")
 local Window = require("ascii-ui.window")
 
@@ -7,10 +6,10 @@ describe("window", function()
 		local window = Window.new()
 		window:open()
 
-		assert.is_true(window:is_open())
+		assert(window:is_open())
 
 		window:close()
-		assert.is_false(window:is_open())
+		assert(not (window:is_open()))
 	end)
 
 	it("should show render", function()
@@ -38,7 +37,7 @@ describe("window", function()
 
 		-- other_buf must still be non-modifiable (bug would set it to true)
 		local modifiable = vim.api.nvim_get_option_value("modifiable", { buf = other_buf })
-		assert.is_false(modifiable)
+		assert(not modifiable)
 
 		-- cleanup
 		vim.api.nvim_set_option_value("modifiable", true, { buf = other_buf })
@@ -75,7 +74,7 @@ describe("window", function()
 		-- The unrelated buffer must be untouched (bug would set modifiable=true then false,
 		-- but even the intermediate true-then-false transition is harmful in practice)
 		local modifiable = vim.api.nvim_get_option_value("modifiable", { buf = other_buf })
-		assert.is_false(modifiable)
+		assert(not modifiable)
 
 		-- cleanup
 		vim.api.nvim_buf_delete(other_buf, { force = true })

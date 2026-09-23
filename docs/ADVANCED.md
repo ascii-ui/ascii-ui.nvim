@@ -400,10 +400,10 @@ ascii-ui.nvim provides testing utilities:
 local testing = require("ascii-ui.testing")
 ```
 
-Unit tests use Plenary's Busted-style harness:
+Unit tests use mini.test's Busted-style harness:
 
 ```lua
-pcall(require, "luacov")
+local eq = require("tests.assertions").eq
 
 describe("MyComponent", function()
     it("renders correctly", function()

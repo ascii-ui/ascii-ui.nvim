@@ -100,10 +100,10 @@ return createComponent("MyComponent", MyComponent, { text = "string" })
 
 ### Testing
 
-- **Framework**: Plenary.nvim with Busted-style `describe`/`it`/`assert`
-- **First line**: `pcall(require, "luacov")` (mandatory)
+- **Framework**: mini.test with Busted-style `describe`/`it` emulation (`scripts/minimal_init.lua`)
+- **Assertions**: `tests/assertions.lua` (`eq` for deep equality), plain `assert`, `MiniTest.expect.*`
 - **Unit tests**: Mirror source structure under `tests/unit/`
-- **E2E tests**: Use `plenary.async.tests.it` for async
+- **E2E tests**: Use plain `it` — cases run synchronously with `vim.wait`
 - **Benchmarks**: Include hard budget assertions
 
 Run tests with:
@@ -114,7 +114,7 @@ make test tests/unit/my_spec.lua   # Single file
 
 **Local != CI**: `make test` uses `scripts/test` (15s timeout wrapper); CI runs `lx test`. Orphaned headless nvim processes from killed runs interact badly with the wrapper timeout — if local results hang or look flaky, check `pgrep -fl nvim` before trusting the run.
 
-**No GNU `timeout` on macOS**: `timeout` cmd absent on Darwin. Never call it directly. Use `make test` (`scripts/test-with-timeout.sh` sleep/kill watchdog, exit 124 on timeout) or plenary `timeout = 10000` opt.
+**No GNU `timeout` on macOS**: `timeout` cmd absent on Darwin. Never call it directly. Use `make test` (`scripts/test-with-timeout.sh` sleep/kill watchdog, exit 124 on timeout).
 
 #### Async E2E Testing
 

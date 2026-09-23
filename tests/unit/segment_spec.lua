@@ -1,8 +1,5 @@
-pcall(require, "luacov")
----@module "luassert"
-
 local Segment = require("ascii-ui.buffer.segment")
-local eq = assert.are.same
+local eq = require("tests.assertions").eq
 
 describe("Segment", function()
 	it("should count ascii characters", function()

@@ -1,7 +1,4 @@
-pcall(require, "luacov")
-
-local async = require("plenary.async")
-local async_it = async.tests.it
+local eq = require("tests.assertions").eq
 
 local ui = require("ascii-ui")
 local Paragraph = ui.components.Paragraph
@@ -9,7 +6,7 @@ local useState = ui.hooks.useState
 local testing_e2e = require("ascii-ui.testing.e2e")
 
 describe("useState with nil values", function()
-	async_it("preserves nil state across re-renders", function()
+	it("preserves nil state across re-renders", function()
 		local set_state
 		local render_count = 0
 
@@ -25,16 +22,16 @@ describe("useState with nil values", function()
 
 		-- Wait for initial render
 		vim.wait(100)
-		assert.are.equal(1, render_count)
-		assert.is_true(screen:hasText("state=100", 100))
+		eq(1, render_count)
+		assert(screen:hasText("state=100", 100))
 
 		-- Set state to nil
 		set_state(nil)
 
 		-- Wait for re-render
 		vim.wait(200)
-		assert.are.equal(2, render_count)
-		assert.is_true(screen:hasText("state=nil", 100), "State should be nil, not re-initialized to 100")
+		eq(2, render_count)
+		assert(screen:hasText("state=nil", 100), "State should be nil, not re-initialized to 100")
 
 		screen:unmount()
 	end)

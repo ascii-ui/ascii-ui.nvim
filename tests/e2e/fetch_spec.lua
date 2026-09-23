@@ -1,7 +1,4 @@
-pcall(require, "luacov")
----@module "luassert"
-
-local eq = assert.are.same
+local eq = require("tests.assertions").eq
 
 --- @param stdout string
 --- @return { status: string, headers: table, body: table }
@@ -45,7 +42,8 @@ local function fetch(url)
 end
 
 describe("fetch", function()
-	pending("executes GET request", function()
+	it("executes GET request", function()
+		MiniTest.skip("requires network access")
 		local url = "https://httpbin.org/get"
 		local response_body = fetch(url)
 

@@ -1,6 +1,4 @@
-pcall(require, "luacov")
-
-local eq = assert.are.same
+local eq = require("tests.assertions").eq
 
 local Segment = require("ascii-ui.buffer.segment")
 local testing = require("ascii-ui.testing")
