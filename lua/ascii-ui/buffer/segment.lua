@@ -12,7 +12,7 @@ local interaction_type = require("ascii-ui.interaction_type")
 --- @field is_focusable? boolean whether the segment can be focused
 --- @field interactions? table<ascii-ui.UserInteractions.InteractionType, function> a map of interaction types to functions
 --- @field highlight? string a highlight group name to apply to the segment
---- @field color? string | ascii-ui.SegmentColor | ascii-ui.Color hex string shorthand ("#rrggbb"), table {fg, bg}, or Color instance
+--- @field color? string | ascii-ui.SegmentColor | ascii-ui.Color hex string shorthand ("#rrggbb"), theme token ("accent"), table {fg, bg}, or Color instance
 --- @field _input_callbacks? ascii-ui.InputCallbacks imperative callbacks for Input component (set by Input, read by mount autocmds)
 
 ---
@@ -52,17 +52,43 @@ local function unicode_len(s)
 	return len
 end
 
+--- Returns true when `s` parses as a `#rgb` / `#rrggbb` hex color.
+---@param s any
+---@return boolean
+local function is_hex_string(s)
+	if type(s) ~= "string" then
+		return false
+	end
+	local clean = s:gsub("^#", "")
+	return (#clean == 3 or #clean == 6) and clean:match("^[0-9a-fA-F]+$") ~= nil
+end
+
 --- Normalize the color field to a Color instance.
 --- Accepts:
 ---   - nil → nil
 ---   - string "#rrggbb" → Color instance with fg
----   - table { fg, bg } → Color instance
+---   - string token name (e.g. `"accent"`) → Color resolved via the active theme
+---   - table { fg, bg } → Color instance (fg/bg also accept token names)
 ---   - Color instance → same instance (cached)
+--- Unknown token names raise an error so typos fail fast.
 ---@param color string | ascii-ui.SegmentColor | ascii-ui.Color | nil
 ---@return ascii-ui.Color | nil
 local function normalize_color(color)
 	if color == nil then
 		return nil
+	end
+	if type(color) == "string" and not is_hex_string(color) then
+		return Color.from_token(color)
+	end
+	if type(color) == "table" and not Color.is_color(color) then
+		local fg, bg = color.fg, color.bg
+		if type(fg) == "string" and not is_hex_string(fg) then
+			fg = require("ascii-ui.theme").resolve(fg)
+		end
+		if type(bg) == "string" and not is_hex_string(bg) then
+			bg = require("ascii-ui.theme").resolve(bg)
+		end
+		return Color.new({ fg = fg, bg = bg })
 	end
 	return Color.new(color)
 end

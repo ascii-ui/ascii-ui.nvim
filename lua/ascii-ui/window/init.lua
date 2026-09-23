@@ -88,10 +88,11 @@ function Window.new(opts)
 	local hl = vim.api.nvim_get_hl(0, { name = "Normal" })
 	vim.api.nvim_set_hl(0, highlights.DEFAULT, { fg = hl.fg, bg = hl.bg })
 
+	-- set theme colors (per-token groups + legacy SELECTION/BUTTON)
+	require("ascii-ui.theme").apply_highlights()
+
 	-- set custom colors
 	local ns_id = vim.api.nvim_create_namespace("ascii-ui")
-	vim.api.nvim_set_hl(0, highlights.SELECTION, { fg = "#f6b93b" })
-	vim.api.nvim_set_hl(0, highlights.BUTTON, { fg = hl.bg, bg = "#f6b93b" })
 
 	local state = {
 		winid = nil,

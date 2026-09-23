@@ -4,6 +4,7 @@ local Hooks = {
 	useEffect = require("ascii-ui.hooks.use_effect"),
 	useReducer = require("ascii-ui.hooks.use_reducer"),
 	useConfig = require("ascii-ui.hooks.use_config"),
+	useTheme = require("ascii-ui.hooks.use_theme"),
 	useInterval = require("ascii-ui.hooks.use_interval"),
 	useTimeout = require("ascii-ui.hooks.use_timeout"),
 }

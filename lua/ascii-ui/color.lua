@@ -374,4 +374,81 @@ function Color:desaturate(amount)
 	return Color.from_hsl(h, s, l)
 end
 
+--- Resolves a theme token (e.g. `"accent"`) to a Color through the active
+--- theme (or `override` when given). Unknown tokens raise an error so typos
+--- fail fast instead of rendering uncolored.
+---@param token string theme token name
+---@param override? ascii-ui.Theme resolve against this theme instead of the active one
+---@return ascii-ui.Color
+function Color.from_token(token, override)
+	local theme = require("ascii-ui.theme")
+	return Color.new({ fg = theme.resolve(token, override) })
+end
+
+--- The 16 standard terminal colors used for the no-truecolor fallback,
+--- ordered so the index maps to SGR codes 30-37 (normal) / 90-97 (bright).
+---@type string[]
+local ANSI16_PALETTE = {
+	"#000000",
+	"#aa0000",
+	"#00aa00",
+	"#aa5500",
+	"#0000aa",
+	"#aa00aa",
+	"#00aaaa",
+	"#aaaaaa",
+	"#555555",
+	"#ff5555",
+	"#55ff55",
+	"#ffff55",
+	"#5555ff",
+	"#ff55ff",
+	"#55ffff",
+	"#ffffff",
+}
+
+---@param hex string "#rrggbb"
+---@return integer index 1-based index into ANSI16_PALETTE of the nearest color
+local function nearest_ansi16(hex)
+	local r, g, b = hex_to_rgb(hex)
+	local best, best_dist = 1, nil
+	for i, candidate in ipairs(ANSI16_PALETTE) do
+		local cr, cg, cb = hex_to_rgb(candidate)
+		local dist = (r - cr) ^ 2 + (g - cg) ^ 2 + (b - cb) ^ 2
+		if best_dist == nil or dist < best_dist then
+			best, best_dist = i, dist
+		end
+	end
+	return best
+end
+
+--- Returns ANSI escape sequences using the 16 standard terminal colors.
+--- This is the no-truecolor fallback used when `theme.supports_truecolor()`
+--- is false: the nearest standard color is picked per channel. Prefer
+--- `to_ansi()` (truecolor) when the terminal supports it.
+---@return string ansi_escape
+function Color:to_ansi16()
+	local parts = {}
+
+	if self.fg then
+		local idx = nearest_ansi16(self.fg) - 1
+		if idx < 8 then
+			table.insert(parts, ("\027[%dm"):format(30 + idx))
+		else
+			table.insert(parts, ("\027[%dm"):format(90 + idx - 8))
+		end
+	end
+
+	if self.bg then
+		local idx = nearest_ansi16(self.bg) - 1
+		if idx < 8 then
+			table.insert(parts, ("\027[%dm"):format(40 + idx))
+		else
+			table.insert(parts, ("\027[%dm"):format(100 + idx - 8))
+		end
+	end
+
+	return table.concat(parts)
+end
+
 return Color
