@@ -191,7 +191,7 @@ Return ~
 @field is_focusable? boolean whether the segment can be focused
 @field interactions? table<ascii-ui.UserInteractions.InteractionType, function> a map of interaction types to functions
 @field highlight? string a highlight group name to apply to the segment
-@field color? string | ascii-ui.SegmentColor | ascii-ui.Color hex string shorthand ("#rrggbb"), table {fg, bg}, or Color instance
+@field color? string | ascii-ui.SegmentColor | ascii-ui.Color hex string shorthand ("#rrggbb"), theme token ("accent"), table {fg, bg}, or Color instance
 @field _input_callbacks? ascii-ui.InputCallbacks imperative callbacks for Input component (set by Input, read by mount autocmds)
 
 ------------------------------------------------------------------------------
@@ -211,14 +211,25 @@ Fields ~
 {private} `(focusable)` boolean
 
 ------------------------------------------------------------------------------
+                                               *ascii-ui.buffer.is_hex_string()*
+                      `ascii-ui.buffer.is_hex_string`({s})
+Returns true when `s` parses as a `#rgb` / `#rrggbb` hex color.
+Parameters ~
+{s} `(any)`
+Return ~
+`(boolean)`
+
+------------------------------------------------------------------------------
                                              *ascii-ui.buffer.normalize_color()*
                    `ascii-ui.buffer.normalize_color`({color})
 Normalize the color field to a Color instance.
 Accepts:
   - nil → nil
   - string "#rrggbb" → Color instance with fg
-  - table { fg, bg } → Color instance
+  - string token name (e.g. `"accent"`) → Color resolved via the active theme
+  - table { fg, bg } → Color instance (fg/bg also accept token names)
   - Color instance → same instance (cached)
+Unknown token names raise an error so typos fail fast.
 Parameters ~
 {color} `(string | ascii)`-ui.SegmentColor | ascii-ui.Color | nil
 Return ~
@@ -522,6 +533,44 @@ Parameters ~
 Return ~
 `(ascii)`-ui.Color
 
+------------------------------------------------------------------------------
+                                                   *ascii-ui.Color.from_token()*
+                `ascii-ui.Color.from_token`({token}, {override})
+Resolves a theme token (e.g. `"accent"`) to a Color through the active
+theme (or `override` when given). Unknown tokens raise an error so typos
+fail fast instead of rendering uncolored.
+Parameters ~
+{token} `(string)` theme token name
+{override} `(optional)` `(ascii)`-ui.Theme resolve against this theme instead of the active one
+Return ~
+`(ascii)`-ui.Color
+
+------------------------------------------------------------------------------
+                                                       *ascii-ui.ANSI16_PALETTE*
+                           `ascii-ui.ANSI16_PALETTE`
+The 16 standard terminal colors used for the no-truecolor fallback,
+ordered so the index maps to SGR codes 30-37 (normal) / 90-97 (bright).
+Type ~
+`(string[])`
+
+------------------------------------------------------------------------------
+                                                     *ascii-ui.nearest_ansi16()*
+                        `ascii-ui.nearest_ansi16`({hex})
+Parameters ~
+{hex} `(string)` "#rrggbb"
+Return ~
+`(integer)` index 1-based index into ANSI16_PALETTE of the nearest color
+
+------------------------------------------------------------------------------
+                                                    *ascii-ui.Color:to_ansi16()*
+                          `ascii-ui.Color:to_ansi16`()
+Returns ANSI escape sequences using the 16 standard terminal colors.
+This is the no-truecolor fallback used when `theme.supports_truecolor()`
+is false: the nearest standard color is picked per channel. Prefer
+`to_ansi()` (truecolor) when the terminal supports it.
+Return ~
+`(string)` ansi_escape
+
 
 ==============================================================================
 ------------------------------------------------------------------------------
@@ -788,6 +837,12 @@ Check if a child is a TreeNode (has text field) or a component
 ------------------------------------------------------------------------------
                                                                *ascii-ui.config*
                                `ascii-ui.config`
+Default configuration for ascii-ui.
+
+Visual defaults follow the `editorial` theme: soft rounded borders and
+comfortable density. `characters`, `symbols` and `density` are derived
+from the active theme by `user_config.set` unless explicitly overridden;
+explicit keys always win over theme values.
 @class ascii-ui.Config
 
 
@@ -796,6 +851,19 @@ Check if a child is a TreeNode (has text field) or a component
                                                        *ascii-ui.config._config*
                            `ascii-ui.config._config`
 @type ascii-ui.Config
+
+------------------------------------------------------------------------------
+                                                 *ascii-ui.config.last_explicit*
+                        `ascii-ui.config.last_explicit`
+Explicit per-key overrides from the last `set()` call. These survive
+`sync_from_theme()` (triggered by `setTheme`), so a user's partial
+`characters`/`symbols`/`density` config is not wiped by theme switches.
+
+------------------------------------------------------------------------------
+                                             *ascii-ui.config.sync_from_theme()*
+                      `ascii-ui.config.sync_from_theme`()
+Re-derive theme-driven config keys from the active theme, preserving
+explicit overrides recorded by `set()`. Also refreshes highlight groups.
 
 
 ==============================================================================
@@ -1200,6 +1268,7 @@ Maps a CursorDirection to the appropriate buffer search function.
 @field renderedBufferGetter fun(): ascii-ui.Buffer Returns current rendered buffer
 @field renderedBufferSetter fun(buffer: ascii-ui.Buffer) Updates rendered buffer reference
 @field inputHandler? ascii-ui.InputHandler Optional input handler for pre-render guard
+@field onClose? fun() Optional callback invoked when the window is closed (e.g. to untrack the mount)
 
 ------------------------------------------------------------------------------
                                        *ascii-ui.handlers.M.register_handlers()*
@@ -1236,6 +1305,13 @@ Retrieve the highlight group name
 ------------------------------------------------------------------------------
                                                            *ascii-ui.Highlights*
                              `ascii-ui.Highlights`
+Legacy highlight group names kept for backward compatibility.
+
+These groups are now managed by the theme system: `theme.apply_highlights()`
+(called by `setup()`, `setTheme()` and `Window.new()`) points them at the
+active theme's tokens, and additionally defines one group per color token
+(`AsciiUIAccent`, `AsciiUISuccess`, ...). Do not hardcode new groups here;
+add a theme token instead.
 (key) ascii-ui.Highlights
 
 
@@ -1352,6 +1428,20 @@ end)
 @param value T The initial state value.
 @return T value A deep copy of the current state value.
 @return fun(value: T | fun(value: T): T) setValue Sets the state to a new value and triggers a state change event.
+
+
+==============================================================================
+------------------------------------------------------------------------------
+                                                     *ascii-ui.hooks.useTheme()*
+                          `ascii-ui.hooks.useTheme`()
+Provides access to the active theme for ascii-ui components.
+
+Unlike `useConfig` (a state snapshot), `useTheme` reads the theme registry
+fresh on every render, so a `setTheme()` + rerender always picks up the
+new tokens without extra subscriptions. Hook state is preserved across
+theme switches because switching never touches fiber hook slots.
+
+@return ascii-ui.Theme theme the currently active theme
 
 
 ==============================================================================
@@ -1552,12 +1642,29 @@ Can be called in two ways:
 
 ==============================================================================
 ------------------------------------------------------------------------------
+                                                        *ascii-ui.active_mounts*
+                            `ascii-ui.active_mounts`
+Records of every currently mounted UI. Used by `rerender_all()` so global
+visual changes (e.g. `ui.setTheme()`) can re-render all viewports without
+touching hook state.
+Type ~
+`({ bus: ascii-ui.EventBus, window: ascii-ui.Viewport, fiberRootGetter: fun(): ascii-ui.RootFiberNode }[])`
+
+------------------------------------------------------------------------------
+                                                       *ascii-ui.forget_mount()*
+                         `ascii-ui.forget_mount`({bus})
+Parameters ~
+{bus} `(ascii)`-ui.EventBus
+
+------------------------------------------------------------------------------
                                                 *ascii-ui.render_error_buffer()*
                      `ascii-ui.render_error_buffer`({err})
 @param err ascii-ui.Error
 @return ascii-ui.Buffer
 
 ------------------------------------------------------------------------------
+                                                                    *ascii-ui.M*
+                                  `ascii-ui.M`
 Mounts a root component into a viewport and starts the render loop.
 
 The simplest call opens a centered Neovim floating window automatically:
@@ -1598,6 +1705,14 @@ Parameters ~
 {viewport} `(optional)` `(ascii)`-ui.Viewport  Rendering target. Defaults to a new `ascii-ui.Window`.
 Return ~
 `(integer)` bufnr  The buffer number used by the viewport (`-1` for non-Neovim targets).
+
+------------------------------------------------------------------------------
+                                                     *ascii-ui.M.rerender_all()*
+                          `ascii-ui.M.rerender_all`()
+Re-render every mounted UI (marks all fiber trees for update, then runs
+the regular state-change render path per mount). Hook state is preserved:
+only the render output refreshes. Used by `ui.setTheme()` so a runtime
+theme switch updates all visible viewports.
 
 
 ==============================================================================
@@ -1802,6 +1917,213 @@ Simulates a vim keypress.
                                                *ascii-ui.testing.Screen:focus()*
                     `ascii-ui.testing.Screen:focus`({text})
 @param text string
+
+
+==============================================================================
+------------------------------------------------------------------------------
+Phase 0 theme system: registry, inheritance, resolution, highlight generation.
+
+A theme is a named table of color tokens, symbol glyphs, border sets and a
+density default. The `editorial` theme is always registered; custom themes
+are added with `define()` and inherit any missing key from `editorial`,
+so a partial spec like `{ name = "mine", colors = { accent = "#fff" } }`
+is a complete theme.
+
+Consuming code never hardcodes hex values: `Color.from_token("accent")`
+resolves through the active theme, `Segment` accepts token names, and
+`apply_highlights()` materializes every token as a Neovim highlight group
+(`AsciiUIAccent`, ...) plus the legacy `SELECTION`/`BUTTON` groups.
+Class ~
+{ascii-ui.ThemeColors}
+Fields ~
+{background} `(string)`
+{surface} `(string)`
+{elevated} `(string)`
+{border} `(string)`
+{separator} `(string)`
+{text} `(string)`
+{text_strong} `(string)`
+{text_muted} `(string)`
+{text_disabled} `(string)`
+{accent} `(string)`
+{success} `(string)`
+{warning} `(string)`
+{error} `(string)`
+{info} `(string)`
+
+------------------------------------------------------------------------------
+Class ~
+{ascii-ui.ThemeSymbols}
+Fields ~
+{focus} `(string)` marker for the focused element (`>`)
+{selected} `(string)` marker for a selected item (`●`)
+{unselected} `(string)` marker for an unselected item (`○`)
+{checked} `(string)` checkbox checked glyph (`✓`)
+{error} `(string)` failure glyph (`×`)
+{warning} `(string)` warning glyph (`!`)
+{pending} `(string)` progress/pending glyph (`▶`)
+{busy} `(string)` spinner glyph (`↻`)
+{expand} `(string)` collapsed-tree glyph (`▸`)
+
+------------------------------------------------------------------------------
+Class ~
+{ascii-ui.BorderChars}
+Fields ~
+{top_left} `(string)`
+{top_right} `(string)`
+{bottom_left} `(string)`
+{bottom_right} `(string)`
+{horizontal} `(string)`
+{vertical} `(string)`
+{left_tree} `(string)`
+{thumb} `(string)`
+{whitespace} `(string)`
+{right_triangule} `(string)`
+{down_triangule} `(string)`
+
+------------------------------------------------------------------------------
+Class ~
+{ascii-ui.ThemeSpec}
+Fields ~
+{name} `(string)` unique theme name (required for `define`)
+{colors} `(optional)` `(table<string, string>)` partial or full token map (missing keys inherit from editorial)
+{symbols} `(optional)` `(ascii)`-ui.ThemeSymbols
+{borders} `(optional)` `(table<("soft"|"classic"|"heavy"|"editorial"), ascii-ui.BorderChars>)`
+{border} `(optional)` "`(soft)`"|"classic"|"heavy"|"editorial" active border style (default `"soft"`)
+{density} `(optional)` "`(compact)`"|"comfortable"|"spacious" default density (default `"comfortable"`)
+
+------------------------------------------------------------------------------
+Class ~
+{ascii-ui.Theme} : ascii-ui.ThemeSpec
+Fields ~
+{colors} `(ascii)`-ui.ThemeColors
+{symbols} `(ascii)`-ui.ThemeSymbols
+{borders} `(table<("soft"|"classic"|"heavy"|"editorial"), ascii-ui.BorderChars>)`
+{border} "`(soft)`"|"classic"|"heavy"|"editorial"
+{density} "`(compact)`"|"comfortable"|"spacious"
+
+------------------------------------------------------------------------------
+                                                       *ascii-ui.theme.registry*
+                           `ascii-ui.theme.registry`
+Type ~
+`(table<string, ascii-ui.Theme>)`
+
+------------------------------------------------------------------------------
+                                                         *ascii-ui.theme.active*
+                            `ascii-ui.theme.active`
+Type ~
+`(ascii)`-ui.Theme|nil
+
+------------------------------------------------------------------------------
+                                                  *ascii-ui.theme.with_shared()*
+                  `ascii-ui.theme.with_shared`({border_chars})
+Parameters ~
+{border_chars} `(table<string, string>)`
+Return ~
+`(ascii)`-ui.BorderChars
+
+------------------------------------------------------------------------------
+                                            *ascii-ui.theme.builtin_editorial()*
+                      `ascii-ui.theme.builtin_editorial`()
+Return ~
+`(ascii)`-ui.Theme
+
+------------------------------------------------------------------------------
+                                                        *ascii-ui.theme.reset()*
+                            `ascii-ui.theme.reset`()
+Restore the registry to its builtin state (editorial only, active).
+Useful for test isolation.
+
+------------------------------------------------------------------------------
+                                                       *ascii-ui.theme.define()*
+                        `ascii-ui.theme.define`({spec})
+Register a theme. themeissing colors, symbols, border sets, border style and
+density inherit from the `editorial` theme, so partial specs are complete.
+Registering an existing name replaces that registration.
+Parameters ~
+{spec} `(ascii)`-ui.ThemeSpec
+Return ~
+`(ascii)`-ui.Theme theme the registered (merged) theme
+
+------------------------------------------------------------------------------
+                                                       *ascii-ui.theme.derive()*
+               `ascii-ui.theme.derive`({base_name}, {overrides})
+Derive an ephemeral (unregistered) theme: `overrides` merged over the
+registered theme `base_name`. Used by `setup({ theme = { ... } })` so
+inline tables never mutate the shared registry.
+Parameters ~
+{base_name} `(string)`
+{overrides} `(table<string, any>)`
+Return ~
+`(ascii)`-ui.Theme
+
+------------------------------------------------------------------------------
+                                                          *ascii-ui.theme.get()*
+                          `ascii-ui.theme.get`({name})
+Parameters ~
+{name} `(optional)` `(string)` theme name; nil returns the active theme
+Return ~
+`(ascii)`-ui.Theme
+
+------------------------------------------------------------------------------
+                                                          *ascii-ui.theme.set()*
+                          `ascii-ui.theme.set`({name})
+Set the active theme by registered name and refresh highlight groups.
+Parameters ~
+{name} `(string)`
+Return ~
+`(ascii)`-ui.Theme theme the now-active theme
+
+------------------------------------------------------------------------------
+                                                   *ascii-ui.theme.set_active()*
+                   `ascii-ui.theme.set_active`({new_active})
+Set an already-resolved (ephemeral) theme active and refresh highlights.
+Parameters ~
+{new_active} `(ascii)`-ui.Theme
+Return ~
+`(ascii)`-ui.Theme
+
+------------------------------------------------------------------------------
+                                                         *ascii-ui.theme.list()*
+                            `ascii-ui.theme.list`()
+Return ~
+`(string[])` names of all registered themes
+
+------------------------------------------------------------------------------
+                                                      *ascii-ui.theme.resolve()*
+                 `ascii-ui.theme.resolve`({token}, {override})
+Resolve a color token to its hex value.
+Parameters ~
+{token} `(string)` e.g. `"accent"`
+{override} `(optional)` `(ascii)`-ui.Theme resolve against this theme instead of the active one
+Return ~
+`(string)` hex `"#rrggbb"`
+
+------------------------------------------------------------------------------
+                                           *ascii-ui.theme.supports_truecolor()*
+                     `ascii-ui.theme.supports_truecolor`()
+Return ~
+`(boolean)` true when the terminal supports truecolor output
+
+------------------------------------------------------------------------------
+                                                   *ascii-ui.theme.capitalize()*
+                      `ascii-ui.theme.capitalize`({token})
+Parameters ~
+{token} `(string)`
+Return ~
+`(string)` capitalized token, e.g. `"accent"` -> `"Accent"`
+
+------------------------------------------------------------------------------
+                                             *ascii-ui.theme.apply_highlights()*
+                      `ascii-ui.theme.apply_highlights`()
+themeaterialize the active theme as Neovim highlight groups.
+
+Lifecycle: called automatically by `setup()`, `setTheme()` and
+`Window.new()`; idempotent (re-applying defines the same groups).
+Every color token becomes `AsciiUI<Token>` (e.g. `AsciiUIAccent`), and
+the legacy `SELECTION`/`BUTTON` groups follow the theme accent so
+existing components pick up theming without rewrites. Stdout parity:
+the same tokens drive ANSI codes via `Color:to_ansi()`.
 
 
 ==============================================================================

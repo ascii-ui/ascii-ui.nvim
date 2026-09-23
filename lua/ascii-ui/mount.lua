@@ -17,6 +17,22 @@ local fiber = require("ascii-ui.fiber")
 local render = fiber.render
 local is_callable = require("ascii-ui.utils.is_callable")
 
+--- Records of every currently mounted UI. Used by `rerender_all()` so global
+--- visual changes (e.g. `ui.setTheme()`) can re-render all viewports without
+--- touching hook state.
+---@type { bus: ascii-ui.EventBus, window: ascii-ui.Viewport, fiberRootGetter: fun(): ascii-ui.RootFiberNode }[]
+local active_mounts = {}
+
+---@param bus ascii-ui.EventBus
+local function forget_mount(bus)
+	for idx, record in ipairs(active_mounts) do
+		if record.bus == bus then
+			table.remove(active_mounts, idx)
+			return
+		end
+	end
+end
+
 --- @param err ascii-ui.Error
 --- @return ascii-ui.Buffer
 local function render_error_buffer(err)
@@ -66,7 +82,9 @@ end
 ---@param RootComponent ascii-ui.FunctionalComponent  The root component to render.
 ---@param viewport? ascii-ui.Viewport  Rendering target. Defaults to a new `ascii-ui.Window`.
 ---@return integer bufnr  The buffer number used by the viewport (`-1` for non-Neovim targets).
-return function(RootComponent, viewport)
+local M = {}
+
+function M.mount(RootComponent, viewport)
 	local start = vim.uv.hrtime()
 	logger.info("------------------")
 	logger.info("Mounting component")
@@ -172,7 +190,13 @@ return function(RootComponent, viewport)
 		renderedBufferGetter = renderedBufferGetter,
 		renderedBufferSetter = renderedBufferSetter,
 		inputHandler = input_handler,
+		onClose = function()
+			forget_mount(bus)
+		end,
 	})
+
+	-- Track this mount so global visual changes can re-render it later.
+	table.insert(active_mounts, { bus = bus, window = window, fiberRootGetter = fiberRootGetter })
 
 	-- Set up window keymaps (now that we have the bus)
 	initialize_window_keymaps(window, bus)
@@ -247,6 +271,8 @@ return function(RootComponent, viewport)
 				return -- not our window
 			end
 
+			forget_mount(bus)
+
 			-- Clean up the cursor autocmd
 			vim.api.nvim_del_autocmd(cursor_autocmd_id)
 
@@ -271,3 +297,30 @@ return function(RootComponent, viewport)
 	logger.info("First render time: %.3f ms", elapsed_ns / 1e6)
 	return window:get_bufnr()
 end
+
+--- Re-render every mounted UI (marks all fiber trees for update, then runs
+--- the regular state-change render path per mount). Hook state is preserved:
+--- only the render output refreshes. Used by `ui.setTheme()` so a runtime
+--- theme switch updates all visible viewports.
+function M.rerender_all()
+	for _, record in ipairs(active_mounts) do
+		local root = record.fiberRootGetter()
+		if root then
+			root:reset()
+			for node in root:iter() do
+				node.tag = "UPDATE"
+			end
+			record.bus:dispatch(Command.StateChange({ prop = "theme", value = true }))
+		end
+	end
+end
+
+-- The module stays callable (`ui.mount(Component)`) while also exposing
+-- `rerender_all` for global visual updates like `ui.setTheme()`.
+setmetatable(M, {
+	__call = function(_, ...)
+		return M.mount(...)
+	end,
+})
+
+return M

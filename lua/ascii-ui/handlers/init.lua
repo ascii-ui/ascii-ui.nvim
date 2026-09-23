@@ -50,6 +50,7 @@ end
 --- @field renderedBufferGetter fun(): ascii-ui.Buffer Returns current rendered buffer
 --- @field renderedBufferSetter fun(buffer: ascii-ui.Buffer) Updates rendered buffer reference
 --- @field inputHandler? ascii-ui.InputHandler Optional input handler for pre-render guard
+--- @field onClose? fun() Optional callback invoked when the window is closed (e.g. to untrack the mount)
 
 --- Registers all command handlers on the given bus.
 --- @param config ascii-ui.HandlerConfig Configuration table with dependencies
@@ -61,10 +62,15 @@ function M.register_handlers(config)
 	local renderedBufferGetter = config.renderedBufferGetter
 	local renderedBufferSetter = config.renderedBufferSetter
 	local inputHandler = config.inputHandler
+	local onClose = config.onClose
 
 	-- CLOSE_WINDOW: close window, unmount fiber tree, detach interactions, clear bus
 	bus:on("CLOSE_WINDOW", function()
 		logger.info("Handling CLOSE_WINDOW for window %d", window:get_id())
+
+		if onClose then
+			onClose()
+		end
 
 		-- Detach from user interactions
 		user_interations:instance():detach_buffer(window:get_bufnr())
@@ -73,7 +79,6 @@ function M.register_handlers(config)
 		-- Close the window
 		window:close()
 		logger.info("Closed window %d", window:get_id())
-
 		-- Unmount the fiber tree
 		local fiberRoot = fiberRootGetter()
 		if fiberRoot then

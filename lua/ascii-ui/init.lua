@@ -3,6 +3,7 @@ local Color = require("ascii-ui.color")
 local Segment = require("ascii-ui.buffer.segment")
 local logger = require("ascii-ui.logger")
 local mount = require("ascii-ui.mount")
+local theme = require("ascii-ui.theme")
 local user_config = require("ascii-ui.config.user_config")
 
 --- @class ascii-ui.AsciiUI
@@ -21,6 +22,38 @@ local AsciiUI = {
 	},
 	createComponent = require("ascii-ui.components.create-component"),
 	hooks = require("ascii-ui.hooks"),
+	--- Theme system (Phase 0): registry, token resolution, highlight generation.
+	---
+	--- ```lua
+	--- local ui = require("ascii-ui")
+	--- ui.defineTheme({ name = "mine", colors = { accent = "#ff0000" } })
+	--- ui.setup({ theme = "mine" })
+	--- ui.setTheme("editorial") -- runtime switch, hook state preserved
+	--- ```
+	theme = theme,
+	--- Register a theme (partial specs inherit from `editorial`).
+	---@param spec ascii-ui.ThemeSpec
+	---@return ascii-ui.Theme
+	defineTheme = function(spec)
+		return theme.define(spec)
+	end,
+	--- Switch the active theme at runtime. Highlight groups refresh
+	--- immediately; all mounted trees re-render with hook state preserved.
+	--- Explicit `characters`/`symbols`/`density` overrides from `setup()`
+	--- survive the switch.
+	---@param name string registered theme name
+	---@return ascii-ui.Theme
+	setTheme = function(name)
+		theme.set(name)
+		user_config.sync_from_theme()
+		mount.rerender_all()
+		return theme.get()
+	end,
+	--- @param name? string theme name; nil returns the active theme
+	---@return ascii-ui.Theme
+	getTheme = function(name)
+		return theme.get(name)
+	end,
 	--- This contains the layout class
 	layout = require("ascii-ui.layout"),
 	mount = mount,
