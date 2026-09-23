@@ -1,0 +1,53 @@
+name: Mutation
+
+on:
+  schedule:
+    - cron: "00 6 * * 1" # every monday at 06:00 UTC
+  workflow_dispatch:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "lua/**"
+      - "tests/**"
+      - "lux.toml"
+      - "Makefile"
+      - ".lua-mutation-test.toml"
+      - ".github/workflows/mutation.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mutation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  mutation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120 # bound worst-case cost: full suite runs once per mutant
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Neovim
+        uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: stable
+
+      - name: Install Lux
+        uses: lumen-oss/gh-actions-lux@v1
+        with:
+          version: "0.40.3"
+
+      - name: Run mutation testing
+        # fail-under: 0 (default) keeps this informational: never blocks
+        # PR fast checks, results surface via job summary + annotations.
+        # path is repo root: lmut copies PATH per mutant and runs the test
+        # command inside the copy, so lux.toml/tests/scripts must be present.
+        uses: lua-mutation-test/lua-mutation-test-action@v0
+        with:
+          version: 0.0.4
+          path: .
+          test-command: lx test
+          config: .lua-mutation-test.toml
