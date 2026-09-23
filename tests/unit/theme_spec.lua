@@ -1,5 +1,3 @@
-pcall(require, "luacov")
-
 local Color = require("ascii-ui.color")
 local Segment = require("ascii-ui.buffer.segment")
 local createComponent = require("ascii-ui.components.create-component")
@@ -10,7 +8,7 @@ local useState = require("ascii-ui.hooks.use_state")
 local useTheme = require("ascii-ui.hooks.use_theme")
 local user_config = require("ascii-ui.config.user_config")
 
-local eq = assert.are.same
+local eq = require("tests.assertions").eq
 
 ---@param bufnr integer
 ---@param pattern string plain-text pattern to wait for
@@ -41,7 +39,7 @@ describe("theme (Phase 0 technical design)", function()
 
 	describe("theme object shape", function()
 		it("editorial is registered by default", function()
-			assert.is_truthy(vim.tbl_contains(theme.list(), "editorial"))
+			assert(vim.tbl_contains(theme.list(), "editorial"))
 		end)
 
 		it("exposes foundation and semantic color tokens", function()
@@ -62,7 +60,7 @@ describe("theme (Phase 0 technical design)", function()
 				"error",
 				"info",
 			}) do
-				assert.is_truthy(t.colors[token], "missing token: " .. token)
+				assert(t.colors[token], "missing token: " .. token)
 			end
 		end)
 
@@ -71,10 +69,10 @@ describe("theme (Phase 0 technical design)", function()
 			eq(">", t.symbols.focus)
 			eq("soft", t.border)
 			eq("comfortable", t.density)
-			assert.is_truthy(t.borders.soft)
-			assert.is_truthy(t.borders.classic)
-			assert.is_truthy(t.borders.heavy)
-			assert.is_truthy(t.borders.editorial)
+			assert(t.borders.soft)
+			assert(t.borders.classic)
+			assert(t.borders.heavy)
+			assert(t.borders.editorial)
 		end)
 	end)
 
@@ -86,23 +84,23 @@ describe("theme (Phase 0 technical design)", function()
 		end)
 
 		it("requires a name", function()
-			assert.has_error(function()
+			MiniTest.expect.error(function()
 				theme.define({ colors = {} })
 			end)
 		end)
 
 		it("registers the theme under its name", function()
 			theme.define({ name = "custom-reg", colors = { accent = "#111111" } })
-			assert.is_truthy(vim.tbl_contains(theme.list(), "custom-reg"))
+			assert(vim.tbl_contains(theme.list(), "custom-reg"))
 		end)
 	end)
 
 	describe("public API shape", function()
 		it("exposes ui.theme, ui.defineTheme, ui.setTheme, ui.getTheme", function()
-			assert.is_truthy(ui.theme)
-			assert.is_true(type(ui.defineTheme) == "function")
-			assert.is_true(type(ui.setTheme) == "function")
-			assert.is_true(type(ui.getTheme) == "function")
+			assert(ui.theme)
+			assert(type(ui.defineTheme) == "function")
+			assert(type(ui.setTheme) == "function")
+			assert(type(ui.getTheme) == "function")
 		end)
 
 		it("setup({ theme = name }) selects a registered theme", function()
@@ -116,7 +114,7 @@ describe("theme (Phase 0 technical design)", function()
 		end)
 
 		it("setup rejects an unknown theme name", function()
-			assert.has_error(function()
+			MiniTest.expect.error(function()
 				ui.setup({ theme = "does-not-exist" })
 			end)
 		end)
@@ -151,12 +149,12 @@ describe("theme (Phase 0 technical design)", function()
 	describe("token resolution", function()
 		it("Color.from_token resolves to the active theme color", function()
 			local c = Color.from_token("accent")
-			assert.is_true(Color.is_color(c))
+			assert(Color.is_color(c))
 			eq(theme.get().colors.accent, c.fg)
 		end)
 
 		it("Color.from_token errors on unknown tokens", function()
-			assert.has_error(function()
+			MiniTest.expect.error(function()
 				Color.from_token("nope-not-a-token")
 			end)
 		end)
@@ -173,18 +171,18 @@ describe("theme (Phase 0 technical design)", function()
 
 		it("resolved tokens produce both hl groups and ANSI (stdout parity)", function()
 			local c = Color.from_token("accent")
-			assert.is_truthy(c:to_hl_group():find("AsciiUI"))
-			assert.is_truthy(c:to_ansi():find("\027%[38;2;"))
+			assert(c:to_hl_group():find("AsciiUI"))
+			assert(c:to_ansi():find("\027%[38;2;"))
 		end)
 
 		it("no-truecolor fallback maps to 16-color SGR codes", function()
 			local ansi16 = Color.new("#ff0000"):to_ansi16()
-			assert.is_truthy(ansi16:find("\027%["))
-			assert.is_nil(ansi16:find("38;2", 1, true))
+			assert(ansi16:find("\027%["))
+			assert(ansi16:find("38;2", 1, true) == nil)
 		end)
 
 		it("supports_truecolor returns a boolean", function()
-			assert.is_true(type(theme.supports_truecolor()) == "boolean")
+			assert(type(theme.supports_truecolor()) == "boolean")
 		end)
 	end)
 
@@ -192,7 +190,7 @@ describe("theme (Phase 0 technical design)", function()
 		it("apply_highlights defines stable per-token groups", function()
 			theme.apply_highlights()
 			local hl = vim.api.nvim_get_hl(0, { name = "AsciiUIAccent" })
-			assert.is_truthy(hl.fg or hl.background)
+			assert(hl.fg or hl.background)
 		end)
 
 		it("legacy SELECTION/BUTTON groups follow the theme accent", function()
@@ -200,8 +198,8 @@ describe("theme (Phase 0 technical design)", function()
 			local highlights = require("ascii-ui.highlights")
 			local sel = vim.api.nvim_get_hl(0, { name = highlights.SELECTION })
 			local btn = vim.api.nvim_get_hl(0, { name = highlights.BUTTON })
-			assert.is_truthy(sel.fg)
-			assert.is_truthy(btn.bg)
+			assert(sel.fg)
+			assert(btn.bg)
 		end)
 
 		it("re-applying highlights is idempotent", function()
@@ -219,7 +217,7 @@ describe("theme (Phase 0 technical design)", function()
 			theme.define({ name = "switched", colors = { accent = "#010203" } })
 			theme.set("switched")
 			local after = vim.api.nvim_get_hl(0, { name = "AsciiUIAccent" })
-			assert.are_not.same(before, after)
+			MiniTest.expect.no_equality(before, after)
 			eq("switched", theme.get().name)
 		end)
 
@@ -234,7 +232,7 @@ describe("theme (Phase 0 technical design)", function()
 
 			local root = fiber.render(Counter)
 			local before = root:get_buffer():to_lines()[1]
-			assert.is_truthy(before:find("count=41", 1, true))
+			assert(before:find("count=41", 1, true))
 
 			theme.define({ name = "rerender-theme", colors = { accent = "#0a0b0c" } })
 			theme.set("rerender-theme")
@@ -245,8 +243,8 @@ describe("theme (Phase 0 technical design)", function()
 			end
 			root = fiber.rerender(root)
 			local after = root:get_buffer():to_lines()[1]
-			assert.is_truthy(after:find("count=41", 1, true))
-			assert.is_truthy(after:find("#0a0b0c", 1, true))
+			assert(after:find("count=41", 1, true))
+			assert(after:find("#0a0b0c", 1, true))
 		end)
 
 		it("ui.setTheme re-renders mounted trees with state preserved", function()
@@ -260,11 +258,11 @@ describe("theme (Phase 0 technical design)", function()
 			theme.define({ name = "live-switch", colors = { accent = "#112233" } })
 
 			local bufnr = ui.mount(Themed)
-			assert.is_true(wait_for_buffer(bufnr, "#f6b93b"))
+			assert(wait_for_buffer(bufnr, "#f6b93b"))
 
 			ui.setTheme("live-switch")
-			assert.is_true(wait_for_buffer(bufnr, "#112233"))
-			assert.is_true(wait_for_buffer(bufnr, "n=7"))
+			assert(wait_for_buffer(bufnr, "#112233"))
+			assert(wait_for_buffer(bufnr, "n=7"))
 
 			close_window(bufnr)
 		end)

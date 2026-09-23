@@ -8,9 +8,9 @@ INIT=${INIT:-scripts/minimal_init.lua}
 if [[ -n $1 ]]; then
   echo "Running single benchmark file: $1"
   $NVIM --headless --noplugin -u "$INIT" \
-    -c "lua MiniTest.run({ collect = { find_files = function() return { '$1' } end } })"
+    -c "lua MiniTest_run({ collect = { find_files = function() return { '$1' } end } })"
 else
   echo "Running all benchmarks"
   $NVIM --headless --noplugin -u "$INIT" \
-    -c "lua MiniTest.run({ collect = { find_files = function() return vim.fn.globpath('tests/bench', '**/*_spec.lua', true, true) end } })"
+    -c "lua MiniTest_run({ collect = { find_files = function() return vim.fn.globpath('tests/bench', '**/*_spec.lua', true, true) end } })"
 fi

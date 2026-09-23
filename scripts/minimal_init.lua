@@ -68,3 +68,22 @@ require("mini.test").setup({
 		stop_on_error = false,
 	},
 })
+
+-- ─────────────────────────────────────────────────────────────
+-- Fail-fast test entrypoint
+-- ─────────────────────────────────────────────────────────────
+-- Same as MiniTest.run(opts), except a collection error (e.g. a spec
+-- file failing to load) exits headless nvim immediately with code 1.
+-- Without this, MiniTest.run() leaves nvim idle forever on collection
+-- errors and CI only fails on its step timeout with no useful output.
+---@param opts table|nil Same shape as MiniTest.config
+function _G.MiniTest_run(opts)
+	opts = opts or {}
+	local ok, cases = pcall(MiniTest.collect, opts.collect)
+	if not ok then
+		io.stderr:write("mini.test collection failed:\n" .. tostring(cases) .. "\n")
+		vim.cmd("1cquit")
+		return
+	end
+	MiniTest.execute(cases, opts.execute)
+end
