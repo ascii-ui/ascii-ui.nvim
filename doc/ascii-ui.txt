@@ -1923,6 +1923,12 @@ Simulates a vim keypress.
 ------------------------------------------------------------------------------
 Phase 0 theme system: registry, inheritance, resolution, highlight generation.
 
+Phase 1 adds the three builtin palettes under `theme/themes/`:
+`editorial` (default fallback base), `phosphor` (green-phosphor terminal)
+and `noir` (strict monochrome). All three expose the same 9 foundation +
+5 semantic color tokens, so the same dashboard renders under any palette
+without component rewrites.
+
 A theme is a named table of color tokens, symbol glyphs, border sets and a
 density default. The `editorial` theme is always registered; custom themes
 are added with `define()` and inherit any missing key from `editorial`,
@@ -2015,6 +2021,12 @@ Type ~
 `(ascii)`-ui.Theme|nil
 
 ------------------------------------------------------------------------------
+                                                *ascii-ui.theme.DEFAULT_SYMBOLS*
+                        `ascii-ui.theme.DEFAULT_SYMBOLS`
+Type ~
+`(ascii)`-ui.ThemeSymbols
+
+------------------------------------------------------------------------------
                                                   *ascii-ui.theme.with_shared()*
                   `ascii-ui.theme.with_shared`({border_chars})
 Parameters ~
@@ -2023,16 +2035,33 @@ Return ~
 `(ascii)`-ui.BorderChars
 
 ------------------------------------------------------------------------------
-                                            *ascii-ui.theme.builtin_editorial()*
-                      `ascii-ui.theme.builtin_editorial`()
+                                                *ascii-ui.theme.DEFAULT_BORDERS*
+                        `ascii-ui.theme.DEFAULT_BORDERS`
+Type ~
+`(table<("soft"|"classic"|"heavy"|"editorial"), ascii-ui.BorderChars>)`
+
+------------------------------------------------------------------------------
+                                                  *ascii-ui.theme.BUILTIN_NAMES*
+                         `ascii-ui.theme.BUILTIN_NAMES`
+Type ~
+`(string[])` names of the builtin palettes, in registration order
+
+------------------------------------------------------------------------------
+                                                *ascii-ui.theme.build_builtin()*
+                     `ascii-ui.theme.build_builtin`({spec})
+Compose a complete builtin theme from its palette spec: symbols, border
+sets, border style and density fall back to the shared defaults, so
+palette files only carry what makes them distinct (colors + name).
+Parameters ~
+{spec} `(ascii)`-ui.ThemeSpec
 Return ~
 `(ascii)`-ui.Theme
 
 ------------------------------------------------------------------------------
                                                         *ascii-ui.theme.reset()*
                             `ascii-ui.theme.reset`()
-Restore the registry to its builtin state (editorial only, active).
-Useful for test isolation.
+Restore the registry to its builtin state (editorial, phosphor and noir
+registered; editorial active). Useful for test isolation.
 
 ------------------------------------------------------------------------------
                                                        *ascii-ui.theme.define()*
@@ -2106,6 +2135,18 @@ Return ~
 `(boolean)` true when the terminal supports truecolor output
 
 ------------------------------------------------------------------------------
+                                                *ascii-ui.theme.is_monochrome()*
+                `ascii-ui.theme.is_monochrome`({theme_or_name})
+Check whether a theme is strictly monochrome: every color token must be
+grayscale (`#rrggbb` with `r == g == b`). Used as the Noir fallback check —
+focus, selection and status semantics must survive on symbols and contrast
+alone, never on hue.
+Parameters ~
+{theme_or_name} `(optional)` `(string|ascii)`-ui.Theme theme name, theme table, or nil for the active theme
+Return ~
+`(boolean)` true when all tokens are grayscale
+
+------------------------------------------------------------------------------
                                                    *ascii-ui.theme.capitalize()*
                       `ascii-ui.theme.capitalize`({token})
 Parameters ~
@@ -2124,6 +2165,40 @@ Every color token becomes `AsciiUI<Token>` (e.g. `AsciiUIAccent`), and
 the legacy `SELECTION`/`BUTTON` groups follow the theme accent so
 existing components pick up theming without rewrites. Stdout parity:
 the same tokens drive ANSI codes via `Color:to_ansi()`.
+
+
+==============================================================================
+------------------------------------------------------------------------------
+Terminal Editorial palette (default theme).
+
+Warm dark editorial look: deep ink backgrounds, soft periwinkle text and a
+golden accent. This is the fallback base every custom theme inherits from
+(see `ascii-ui.theme.define`), so its token map must stay complete.
+Type ~
+`(ascii)`-ui.ThemeSpec
+
+
+==============================================================================
+------------------------------------------------------------------------------
+Noir palette: strict monochrome personality.
+
+Every token is grayscale (`r == g == b`), so `theme.is_monochrome("noir")`
+holds. Focus, selection and status semantics survive without color because
+they are carried by the symbol vocabulary (`>`, `●`/`○`, `✓`/`×`/`!`) and
+text contrast — never by hue alone.
+Type ~
+`(ascii)`-ui.ThemeSpec
+
+
+==============================================================================
+------------------------------------------------------------------------------
+Phosphor palette: green-phosphor terminal personality.
+
+Near-black green-tinted surfaces with a phosphor-green accent. Warning
+stays amber (classic amber-terminal nod) while error/info keep their
+semantic hues so status stays scannable without component rewrites.
+Type ~
+`(ascii)`-ui.ThemeSpec
 
 
 ==============================================================================

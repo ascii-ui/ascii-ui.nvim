@@ -1,5 +1,11 @@
 --- Phase 0 theme system: registry, inheritance, resolution, highlight generation.
 ---
+--- Phase 1 adds the three builtin palettes under `theme/themes/`:
+--- `editorial` (default fallback base), `phosphor` (green-phosphor terminal)
+--- and `noir` (strict monochrome). All three expose the same 9 foundation +
+--- 5 semantic color tokens, so the same dashboard renders under any palette
+--- without component rewrites.
+---
 --- A theme is a named table of color tokens, symbol glyphs, border sets and a
 --- density default. The `editorial` theme is always registered; custom themes
 --- are added with `define()` and inherit any missing key from `editorial`,
@@ -76,6 +82,19 @@ local registry = {}
 ---@type ascii-ui.Theme|nil
 local active = nil
 
+---@type ascii-ui.ThemeSymbols
+local DEFAULT_SYMBOLS = {
+	focus = ">",
+	selected = "●",
+	unselected = "○",
+	checked = "✓",
+	error = "×",
+	warning = "!",
+	pending = "▶",
+	busy = "↻",
+	expand = "▸",
+}
+
 local SHARED_CHARS = {
 	thumb = "●",
 	whitespace = " ",
@@ -89,88 +108,75 @@ local function with_shared(border_chars)
 	return vim.tbl_extend("force", SHARED_CHARS, border_chars)
 end
 
+---@type table<ascii-ui.BorderStyle, ascii-ui.BorderChars>
+local DEFAULT_BORDERS = {
+	soft = with_shared({
+		top_left = "╭",
+		top_right = "╮",
+		bottom_left = "╰",
+		bottom_right = "╯",
+		horizontal = "─",
+		vertical = "│",
+		left_tree = "├",
+	}),
+	classic = with_shared({
+		top_left = "┌",
+		top_right = "┐",
+		bottom_left = "└",
+		bottom_right = "┘",
+		horizontal = "─",
+		vertical = "│",
+		left_tree = "├",
+	}),
+	heavy = with_shared({
+		top_left = "┏",
+		top_right = "┓",
+		bottom_left = "┗",
+		bottom_right = "┛",
+		horizontal = "━",
+		vertical = "┃",
+		left_tree = "┣",
+	}),
+	editorial = with_shared({
+		top_left = " ",
+		top_right = " ",
+		bottom_left = " ",
+		bottom_right = " ",
+		horizontal = "─",
+		vertical = " ",
+		left_tree = "─",
+	}),
+}
+
+---@type string[] names of the builtin palettes, in registration order
+local BUILTIN_NAMES = { "editorial", "phosphor", "noir" }
+
+--- Compose a complete builtin theme from its palette spec: symbols, border
+--- sets, border style and density fall back to the shared defaults, so
+--- palette files only carry what makes them distinct (colors + name).
+---@param spec ascii-ui.ThemeSpec
 ---@return ascii-ui.Theme
-local function builtin_editorial()
-	return {
-		name = "editorial",
-		colors = {
-			background = "#1a1b26",
-			surface = "#24283b",
-			elevated = "#2f3549",
-			border = "#414868",
-			separator = "#343b5c",
-			text = "#c0caf5",
-			text_strong = "#ffffff",
-			text_muted = "#787c99",
-			text_disabled = "#565f89",
-			accent = "#f6b93b",
-			success = "#9ece6a",
-			warning = "#e0af68",
-			error = "#f7768e",
-			info = "#7aa2f7",
-		},
-		symbols = {
-			focus = ">",
-			selected = "●",
-			unselected = "○",
-			checked = "✓",
-			error = "×",
-			warning = "!",
-			pending = "▶",
-			busy = "↻",
-			expand = "▸",
-		},
-		borders = {
-			soft = with_shared({
-				top_left = "╭",
-				top_right = "╮",
-				bottom_left = "╰",
-				bottom_right = "╯",
-				horizontal = "─",
-				vertical = "│",
-				left_tree = "├",
-			}),
-			classic = with_shared({
-				top_left = "┌",
-				top_right = "┐",
-				bottom_left = "└",
-				bottom_right = "┘",
-				horizontal = "─",
-				vertical = "│",
-				left_tree = "├",
-			}),
-			heavy = with_shared({
-				top_left = "┏",
-				top_right = "┓",
-				bottom_left = "┗",
-				bottom_right = "┛",
-				horizontal = "━",
-				vertical = "┃",
-				left_tree = "┣",
-			}),
-			editorial = with_shared({
-				top_left = " ",
-				top_right = " ",
-				bottom_left = " ",
-				bottom_right = " ",
-				horizontal = "─",
-				vertical = " ",
-				left_tree = "─",
-			}),
-		},
+local function build_builtin(spec)
+	local full = vim.tbl_deep_extend("force", {
+		symbols = vim.deepcopy(DEFAULT_SYMBOLS),
+		borders = vim.deepcopy(DEFAULT_BORDERS),
 		border = "soft",
 		density = "comfortable",
-	}
+	}, spec)
+	---@cast full ascii-ui.Theme
+	return full
 end
 
---- Restore the registry to its builtin state (editorial only, active).
---- Useful for test isolation.
+--- Restore the registry to its builtin state (editorial, phosphor and noir
+--- registered; editorial active). Useful for test isolation.
 function theme.reset()
 	registry = {}
 	active = nil
-	local editorial = builtin_editorial()
-	registry[editorial.name] = editorial
-	active = editorial
+	for _, name in ipairs(BUILTIN_NAMES) do
+		local spec = require("ascii-ui.theme.themes." .. name)
+		registry[name] = build_builtin(spec)
+	end
+	active = registry["editorial"]
 end
 
 --- Register a theme. themeissing colors, symbols, border sets, border style and
@@ -182,7 +188,7 @@ function theme.define(spec)
 	assert(type(spec) == "table", "theme.define expects a table spec")
 	assert(type(spec.name) == "string" and #spec.name > 0, "theme.define requires a `name` string")
 
-	local base = registry["editorial"] or builtin_editorial()
+	local base = registry["editorial"] or build_builtin(require("ascii-ui.theme.themes.editorial"))
 	local merged = vim.tbl_deep_extend("force", vim.deepcopy(base), spec)
 	merged.name = spec.name
 	---@cast merged ascii-ui.Theme
@@ -256,6 +262,34 @@ end
 ---@return boolean true when the terminal supports truecolor output
 function theme.supports_truecolor()
 	return vim.go.termguicolors == true
+end
+
+--- Check whether a theme is strictly monochrome: every color token must be
+--- grayscale (`#rrggbb` with `r == g == b`). Used as the Noir fallback check —
+--- focus, selection and status semantics must survive on symbols and contrast
+--- alone, never on hue.
+---@param theme_or_name? string|ascii-ui.Theme theme name, theme table, or nil for the active theme
+---@return boolean true when all tokens are grayscale
+function theme.is_monochrome(theme_or_name)
+	local source
+	if theme_or_name == nil then
+		source = theme.get()
+	elseif type(theme_or_name) == "string" then
+		source = theme.get(theme_or_name)
+	else
+		source = theme_or_name
+	end
+	assert(
+		type(source) == "table" and type(source.colors) == "table",
+		"theme.is_monochrome expects a theme name or theme table"
+	)
+	for _, hex in pairs(source.colors) do
+		local r, g, b = hex:match("^#(%x%x)(%x%x)(%x%x)$")
+		if r == nil or r:lower() ~= g:lower() or r:lower() ~= b:lower() then
+			return false
+		end
+	end
+	return true
 end
 
 ---@param token string

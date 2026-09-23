@@ -100,8 +100,51 @@ inputs) survives the switch. Mounts untrack on `CLOSE_WINDOW` / `WinClosed`.
 active theme's border set unless explicitly overridden), plus existing
 `log_level` / `keymaps`. Defaults = Editorial + soft + comfortable.
 
-## Open questions for Phase 1+
+## Phase 1 — palettes (Closes #105)
 
-- Final hex values for Phosphor / Noir palettes (#105).
+Builtin palettes live in `lua/ascii-ui/theme/themes/` (`editorial.lua`,
+`phosphor.lua`, `noir.lua`). Each file is a `ThemeSpec` carrying the palette's
+14 color tokens plus its default `border`/`density`; `theme/init.lua` composes
+the shared symbol vocabulary and the four border sets over them, so every
+palette exposes identical symbols, borders, border style and density. The
+`editorial` palette doubles as the inheritance base for `theme.define()`.
+
+Foundation tokens (all palettes): `background, surface, elevated, border,
+separator, text, text_strong, text_muted, text_disabled`. Semantic tokens:
+`accent, success, warning, error, info`.
+
+| token | editorial (default) | phosphor | noir |
+|---|---|---|---|
+| background | `#1a1b26` | `#0a0f0a` | `#0a0a0a` |
+| surface | `#24283b` | `#0f1a0f` | `#161616` |
+| elevated | `#2f3549` | `#172417` | `#232323` |
+| border | `#414868` | `#2d5a2d` | `#454545` |
+| separator | `#343b5c` | `#1e3a1e` | `#2e2e2e` |
+| text | `#c0caf5` | `#b8e6b8` | `#d4d4d4` |
+| text_strong | `#ffffff` | `#eaffea` | `#ffffff` |
+| text_muted | `#787c99` | `#5f8a5f` | `#8a8a8a` |
+| text_disabled | `#565f89` | `#385438` | `#5c5c5c` |
+| accent | `#f6b93b` | `#33ff66` | `#ffffff` |
+| success | `#9ece6a` | `#33ff66` | `#d9d9d9` |
+| warning | `#e0af68` | `#ffcc33` | `#a6a6a6` |
+| error | `#f7768e` | `#ff5555` | `#f2f2f2` |
+| info | `#7aa2f7` | `#55ffff` | `#c2c2c2` |
+
+- **Terminal Editorial** (default): warm dark ink + golden accent.
+- **Phosphor**: green-phosphor terminal; amber warning as an amber-terminal
+  nod, red/cyan kept for error/info so status stays scannable.
+- **Noir**: strict monochrome — every token is grayscale, so
+  `theme.is_monochrome("noir")` holds while `editorial`/`phosphor` report
+  false. Focus/selection/status survive on symbols (`>`, `●`/`○`,
+  `✓`/`×`/`!`) and contrast, never on hue alone.
+
+Highlight generation is palette-agnostic: `theme.apply_highlights()` defines
+one `AsciiUI<Token>` group per token from the active palette and points the
+legacy `SELECTION`/`BUTTON` groups at its accent. The no-truecolor fallback is
+`Color:to_ansi16()` (nearest of the 16 SGR colors), covered per semantic token
+under Noir in `tests/unit/theme_palettes_spec.lua`.
+
+## Open questions for Phase 2+
+
 - Whether `density` should also scale window padding automatically (#107).
 - Auto re-render granularity (whole tree vs dirty subtrees) if profiling demands it.
