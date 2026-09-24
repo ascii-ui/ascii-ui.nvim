@@ -294,7 +294,9 @@ end)
 
 ### Key Details
 
-- Uses `vim.uv.new_timer()` under the hood
+- Built on the `ascii-ui.utils.async` compat layer: native `vim.async`
+  structured-concurrency tasks on new Neovims (nightly / 0.13+), `vim.uv`
+  timers otherwise — same `close()` cancellation semantics on both
 - Callback is wrapped with `vim.schedule_wrap` for thread safety
 - Cleanup is automatic — no need to manually stop the timer
 - If `delay` is `nil` or `<= 0`, the interval is not started
@@ -334,6 +336,8 @@ end)
 
 - Always calls the **latest** version of the callback (via internal ref)
 - Timer only restarts when `delay` changes, not on every render
+- Built on the `ascii-ui.utils.async` compat layer: native `vim.async`
+  task on new Neovims, `vim.uv` timer otherwise
 - Automatic cleanup on unmount
 - Useful for: delayed reveals, debounced actions, auto-dismiss notifications
 
@@ -353,6 +357,49 @@ local Notification = ui.createComponent("Notification", function(props)
     return { Paragraph({ content = props.message }) }
 end)
 ```
+
+---
+
+## useAsync
+
+Runs an async function as a structured-concurrency task tied to the component
+lifecycle. The task is cancelled automatically on unmount or when dependencies
+change. Uses native `vim.async` when available (nightly / 0.13+), with a
+`vim.uv`-backed shim on older Neovims.
+
+```lua
+local useAsync = ui.hooks.useAsync
+local async = require("ascii-ui.utils.async")
+
+local FileInfo = ui.createComponent("FileInfo", function(props)
+    local size, setSize = useState(nil)
+
+    useAsync(function()
+        local err, stat = async.await(2, vim.uv.fs_stat, props.path)
+        if not err and stat then
+            setSize(stat.size)
+        end
+    end, { props.path })
+
+    return { Paragraph({ content = size and tostring(size) or "loading..." }) }
+end)
+```
+
+### Signature
+
+```lua
+---@param fn fun(...: any): any ...  -- async function (may call async.sleep / async.await)
+---@param dependencies? any[]        -- re-run when any value changes
+---@return ascii-ui.AsyncTask task
+```
+
+### Key Details
+
+- Cancellation is cooperative: check `async.is_closing()` at checkpoints, or
+  simply let `async.sleep` / `async.await` observe the close
+- Previous task is closed before a new one starts on dependency change
+- For timers prefer `useInterval` / `useTimeout`; for general async work
+  (fs, jobs, LSP) prefer `useAsync`
 
 ---
 

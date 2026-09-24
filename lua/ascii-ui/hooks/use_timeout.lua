@@ -1,3 +1,4 @@
+local async = require("ascii-ui.utils.async")
 local fiber = require("ascii-ui.fiber")
 local useEffect = require("ascii-ui.hooks.use_effect")
 
@@ -31,24 +32,18 @@ local function useTimeout(callback, delay)
 			return -- Do nothing if delay is nil or negative
 		end
 
-		local timer = assert(vim.uv.new_timer())
-
-		timer:start(
-			delay,
-			0,
-			vim.schedule_wrap(function()
-				-- Call the latest callback via the ref
-				if storage.callbackRef and storage.callbackRef.current then
-					storage.callbackRef.current()
-				end
-			end)
-		)
+		-- Structured concurrency via the async compat layer: native
+		-- `vim.async` task when available, `vim.uv` timer otherwise.
+		-- The handle exposes `close()` for effect cleanup / unmount.
+		local handle = async.after(delay, function()
+			-- Call the latest callback via the ref
+			if storage.callbackRef and storage.callbackRef.current then
+				storage.callbackRef.current()
+			end
+		end)
 
 		return function()
-			if timer and not timer:is_closing() then
-				timer:stop()
-				timer:close()
-			end
+			handle:close()
 		end
 	end, { delay }) -- Only restart when delay changes
 

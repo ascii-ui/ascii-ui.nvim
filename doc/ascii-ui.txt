@@ -1324,6 +1324,43 @@ add a theme token instead.
 
 ==============================================================================
 ------------------------------------------------------------------------------
+                                                     *ascii-ui.hooks.useAsync()*
+             `ascii-ui.hooks.useAsync`({fn}, {dependencies}, {...})
+
+Runs an async function as a structured-concurrency task tied to the
+component lifecycle. The task is cancelled automatically when the
+component unmounts or when `dependencies` change.
+
+On Neovim with `vim.async` (nightly / 0.13+) this uses a native task:
+cancellation propagates cooperatively (`async.is_closing()` observes it
+at the next checkpoint) and unhandled child errors fail the task.
+On older Neovims a shim with the same `close` / `wait` surface is used.
+
+```lua
+local useAsync = ui.hooks.useAsync
+
+local DataView = ui.createComponent("DataView", function(props)
+	local data, setData = ui.hooks.useState(nil)
+
+	useAsync(function()
+		local err, stat = async.await(2, vim.uv.fs_stat, props.path)
+		if not err and stat then
+			setData(stat.size)
+		end
+	end, { props.path })
+
+	return { Paragraph({ content = data and tostring(data) or "loading..." }) }
+end)
+```
+
+@param fn fun(...: any): any ... async function to run (may call `async.sleep` / `async.await`)
+@param dependencies? any[] re-run when any value changes; `{}` runs once on mount; nil runs every render
+@param ... any extra arguments forwarded to `fn`
+@return ascii-ui.AsyncTask|any the running task (native `vim.async.Task` when available)
+
+
+==============================================================================
+------------------------------------------------------------------------------
                                                     *ascii-ui.hooks.useConfig()*
                           `ascii-ui.hooks.useConfig`()
 
@@ -1759,6 +1796,18 @@ Waits for text to appear in the buffer.
 @param text string
 @param timeout? integer milliseconds (default 1000)
 @return boolean
+
+------------------------------------------------------------------------------
+                                        *ascii-ui.testing.E2EScreen:awaitText()*
+           `ascii-ui.testing.E2EScreen:awaitText`({text}, {timeout})
+Async variant of `waitForText` for use inside `async.run` tasks.
+Polls with cooperative `async.sleep` instead of blocking `vim.wait`,
+so it never blocks the event loop on Neovims with `vim.async`.
+Falls back to `vim.wait`-style polling otherwise.
+Must be called inside `async.run` on native runtimes.
+@param text string
+@param timeout? integer milliseconds (default 1000)
+@return boolean found
 
 ------------------------------------------------------------------------------
 Asserts cursor is at the given position.
@@ -2235,6 +2284,220 @@ Parameters ~
              `ascii-ui.UserInteractions:detach_buffer`({buffer_id})
 Parameters ~
 {buffer_id} `(integer)`
+
+
+==============================================================================
+------------------------------------------------------------------------------
+Structured-concurrency async utilities with `vim.async` support and fallback.
+
+`vim.async` (Neovim nightly / 0.13+, see `:h vim.async`, PR #34473,
+derived from lewis6991/async.nvim) provides cooperative tasks, cancellation,
+timeouts, and semaphores. Older Neovims (stable, 0.11) do not have it, so
+every helper here works on both runtimes:
+
+- when `vim.async` exists, timers and tasks use native structured
+  concurrency (`run` / `sleep` / `Task:close`);
+- otherwise a `vim.uv` timer fallback with the same handle shape is used.
+
+Use this module instead of calling `vim.uv.new_timer`,
+`vim.defer_fn`, or `vim.schedule_wrap` directly so behavior stays
+consistent across Neovim versions.
+
+```lua
+local async = require("ascii-ui.utils.async")
+
+-- one-shot, cancellable
+local handle = async.after(300, function()
+	print("fired")
+end)
+handle:close() -- cancel before it fires
+
+-- repeating
+local ticker = async.every(1000, function()
+	print("tick")
+end)
+ticker:close()
+
+-- structured task (native Task on new Nvim, shim otherwise)
+local task = async.run(function()
+	async.sleep(100)
+	return "done"
+end)
+print(task:wait(1000))
+```
+
+@class ascii-ui.AsyncHandle
+@field close fun(self?: ascii-ui.AsyncHandle, callback?: fun()) Cancel the timer/task.
+@field is_closing fun(self?: ascii-ui.AsyncHandle): boolean True after `close()` was called.
+
+@class ascii-ui.AsyncTask : ascii-ui.AsyncHandle
+@field completed fun(self: ascii-ui.AsyncTask): boolean
+@field status fun(self: ascii-ui.AsyncTask): string
+@field wait fun(self: ascii-ui.AsyncTask, timeout?: integer): any ...
+@field pwait fun(self: ascii-ui.AsyncTask, timeout?: integer): boolean, any ...
+@field detach fun(self: ascii-ui.AsyncTask): ascii-ui.AsyncTask
+@field on_complete fun(self: ascii-ui.AsyncTask, callback: fun(err?: any, ...: any)): fun()
+@field raise_on_error fun(self: ascii-ui.AsyncTask): ascii-ui.AsyncTask
+
+------------------------------------------------------------------------------
+                                                 *ascii-ui.utils.M.has_native()*
+                        `ascii-ui.utils.M.has_native`()
+Returns true when the native `vim.async` API is available.
+@return boolean
+
+------------------------------------------------------------------------------
+                                                   *ascii-ui.utils.M.schedule()*
+                       `ascii-ui.utils.M.schedule`({fn})
+Schedules `fn` on the main loop (thin wrapper over `vim.schedule`).
+Kept here so callers only require one async module.
+@param fn fun()
+
+------------------------------------------------------------------------------
+                                                      *ascii-ui.utils.M.sleep()*
+                         `ascii-ui.utils.M.sleep`({ms})
+Suspends the current task for `ms` milliseconds without blocking.
+Must be called inside `M.run` (or `vim.async.run`).
+Fallback (no native `vim.async`): blocking `vim.wait`, honoring close.
+@param ms integer milliseconds to sleep
+
+------------------------------------------------------------------------------
+                                                 *ascii-ui.utils.M.is_closing()*
+                        `ascii-ui.utils.M.is_closing`()
+Returns true if the current async task has been asked to close.
+Outside a task, always returns false.
+@return boolean
+
+------------------------------------------------------------------------------
+                                                 *ascii-ui.utils.native_after()*
+                  `ascii-ui.utils.native_after`({delay}, {fn})
+Creates a cancellable one-shot timer from a native `vim.async` task.
+@param delay integer ms
+@param fn fun()
+@return ascii-ui.AsyncHandle
+
+------------------------------------------------------------------------------
+                                                 *ascii-ui.utils.native_every()*
+                  `ascii-ui.utils.native_every`({delay}, {fn})
+Creates a cancellable repeating timer from a native `vim.async` task.
+@param delay integer ms
+@param fn fun()
+@return ascii-ui.AsyncHandle
+
+------------------------------------------------------------------------------
+                                                *ascii-ui.utils.wrap_uv_timer()*
+                    `ascii-ui.utils.wrap_uv_timer`({timer})
+Wraps a `vim.uv` timer handle in the shared `AsyncHandle` shape.
+@param timer uv.uv_timer_t|nil
+@return ascii-ui.AsyncHandle
+
+------------------------------------------------------------------------------
+                                                     *ascii-ui.utils.uv_after()*
+                    `ascii-ui.utils.uv_after`({delay}, {fn})
+Fallback one-shot timer via `vim.uv`.
+@param delay integer ms
+@param fn fun()
+@return ascii-ui.AsyncHandle
+
+------------------------------------------------------------------------------
+                                                     *ascii-ui.utils.uv_every()*
+                    `ascii-ui.utils.uv_every`({delay}, {fn})
+Fallback repeating timer via `vim.uv`.
+@param delay integer ms
+@param fn fun()
+@return ascii-ui.AsyncHandle
+
+------------------------------------------------------------------------------
+                                                      *ascii-ui.utils.M.after()*
+                    `ascii-ui.utils.M.after`({delay}, {fn})
+Runs `fn` once after `delay` ms. Returns a cancellable handle.
+On native runtimes this is a `vim.async` task (cooperative cancel);
+otherwise a `vim.uv` timer. Either way `handle:close()` cancels.
+@param delay integer ms; nil/negative returns an already-closed handle
+@param fn fun()
+@return ascii-ui.AsyncHandle
+
+------------------------------------------------------------------------------
+                                                      *ascii-ui.utils.M.every()*
+                    `ascii-ui.utils.M.every`({delay}, {fn})
+Runs `fn` every `delay` ms until the returned handle is closed.
+@param delay integer ms; nil/non-positive returns an already-closed handle
+@param fn fun()
+@return ascii-ui.AsyncHandle
+
+------------------------------------------------------------------------------
+                                                      *ascii-ui.utils.M.defer()*
+                    `ascii-ui.utils.M.defer`({fn}, {delay})
+Alias for `M.after`, replacing direct `vim.defer_fn` usage.
+@param fn fun()
+@param delay integer ms
+@return ascii-ui.AsyncHandle
+
+------------------------------------------------------------------------------
+                                                   *ascii-ui.utils.M.debounce()*
+                   `ascii-ui.utils.M.debounce`({fn}, {delay})
+Returns a debounced version of `fn`: rapid calls collapse into one
+invocation `delay` ms after the last call. The pending call can be
+cancelled via the `.cancel()` method on the debounced function.
+@param fn fun(...: any)
+@param delay integer ms
+@return fun(...: any) debounced
+
+------------------------------------------------------------------------------
+                                                     *ascii-ui.utils.shim_run()*
+                     `ascii-ui.utils.shim_run`({fn}, {...})
+Builds a minimal Task-compatible shim around scheduled execution.
+Supports `wait` / `pwait` (via `vim.wait` polling), `close`,
+`detach`, `on_complete`, `completed`, and `status`.
+@param fn fun(...: any): any ...
+@param ... any arguments forwarded to `fn`
+@return ascii-ui.AsyncTask
+
+------------------------------------------------------------------------------
+                                                        *ascii-ui.utils.M.run()*
+                  `ascii-ui.utils.M.run`({fn_or_name}, {...})
+Creates a task from an async function.
+Native when `vim.async` exists (structured concurrency: children attach,
+cancel propagates, errors bubble to the parent); otherwise a shim with the
+same `wait` / `close` / `on_complete` surface.
+
+Accepts both `run(fn, ...)` and `run(name, fn, ...)` signatures.
+@param fn_or_name fun(...: any): any ... | string
+@param ... any
+@return ascii-ui.AsyncTask|any native Task when available
+
+------------------------------------------------------------------------------
+                                                      *ascii-ui.utils.M.await()*
+                        `ascii-ui.utils.M.await`({...})
+Awaits a task or callback-style function inside `M.run`.
+Native: `vim.async.await`. Fallback: polls task completion via `vim.wait`,
+or invokes callback-style functions synchronously.
+@param ... any same forms as `vim.async.await`
+@return any ...
+
+------------------------------------------------------------------------------
+                                                     *ascii-ui.utils.M.pawait()*
+                        `ascii-ui.utils.M.pawait`({...})
+Protected await; returns `ok, ...` instead of raising.
+@param ... any same forms as `M.await`
+@return boolean ok
+
+------------------------------------------------------------------------------
+                                                       *ascii-ui.utils.M.wrap()*
+                    `ascii-ui.utils.M.wrap`({argc}, {func})
+Wraps a callback-style function into an async function.
+Native: `vim.async.wrap`. Fallback: synchronous wrapper.
+@param argc integer callback position (1-based)
+@param func fun(...: any)
+@return fun(...: any)
+
+------------------------------------------------------------------------------
+                                                    *ascii-ui.utils.M.timeout()*
+                 `ascii-ui.utils.M.timeout`({duration}, {task})
+Awaits a task with a deadline; closes the task and raises `"timeout"`
+when the deadline wins. Native uses `vim.async.timeout`, fallback polls.
+@param duration integer ms
+@param task ascii-ui.AsyncTask|any
+@return any ...
 
 
 ==============================================================================
