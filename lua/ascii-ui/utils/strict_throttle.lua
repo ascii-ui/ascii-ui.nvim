@@ -1,3 +1,5 @@
+local async = require("ascii-ui.utils.async")
+
 local function strict_throttle(fn, delay)
 	local running = false
 	local queued_args = nil
@@ -5,7 +7,7 @@ local function strict_throttle(fn, delay)
 	local function run(...)
 		running = true
 		fn(...)
-		vim.defer_fn(function()
+		async.defer(function()
 			if queued_args then
 				local args = queued_args
 				queued_args = nil

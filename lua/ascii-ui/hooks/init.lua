@@ -7,6 +7,7 @@ local Hooks = {
 	useTheme = require("ascii-ui.hooks.use_theme"),
 	useInterval = require("ascii-ui.hooks.use_interval"),
 	useTimeout = require("ascii-ui.hooks.use_timeout"),
+	useAsync = require("ascii-ui.hooks.use_async"),
 }
 
 return Hooks

@@ -1,4 +1,5 @@
 local Cursor = require("ascii-ui.cursor")
+local async = require("ascii-ui.utils.async")
 local testing = require("ascii-ui.testing")
 local ui = require("ascii-ui")
 
@@ -68,6 +69,28 @@ function E2EScreen:waitForText(text, timeout)
 	return vim.wait(timeout, function()
 		return self:bufferContains(text)
 	end)
+end
+
+--- Async variant of `waitForText` for use inside `async.run` tasks.
+--- Polls with cooperative `async.sleep` instead of blocking `vim.wait`,
+--- so it never blocks the event loop on Neovims with `vim.async`.
+--- Falls back to `vim.wait`-style polling otherwise.
+--- Must be called inside `async.run` on native runtimes.
+--- @param text string
+--- @param timeout? integer milliseconds (default 1000)
+--- @return boolean found
+function E2EScreen:awaitText(text, timeout)
+	timeout = timeout or 1000
+	local deadline = vim.uv.now() + timeout
+	while vim.uv.now() < deadline do
+		local lines = self:_get_buffer_lines()
+		if table.concat(lines, "\n"):find(text, 1, true) ~= nil then
+			return true
+		end
+		async.sleep(10)
+	end
+	local lines = self:_get_buffer_lines()
+	return table.concat(lines, "\n"):find(text, 1, true) ~= nil
 end
 
 --- Asserts cursor is at the given position.

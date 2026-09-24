@@ -1,3 +1,4 @@
+local async = require("ascii-ui.utils.async")
 local useEffect = require("ascii-ui.hooks.use_effect")
 
 ---
@@ -13,14 +14,13 @@ local function useInterval(callback, delay)
 			return
 		end
 
-		local timer = assert(vim.uv.new_timer())
-		timer_ref.current = timer
-
-		timer:start(delay, delay, vim.schedule_wrap(callback))
+		-- Structured concurrency via the async compat layer: native
+		-- `vim.async` task when available, `vim.uv` timer otherwise.
+		local handle = async.every(delay, callback)
+		timer_ref.current = handle
 
 		return function()
 			if timer_ref.current then
-				timer_ref.current:stop()
 				timer_ref.current:close()
 				timer_ref.current = nil
 			end

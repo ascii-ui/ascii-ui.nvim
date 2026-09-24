@@ -13,6 +13,8 @@
 --   3. On any change: close open floating windows, unload all ascii-ui
 --      modules from package.loaded, then re-run debug.lua.
 
+local async = require("ascii-ui.utils.async")
+
 local M = {}
 
 -- Module-level state.  All closures (autocmd, fs_event callbacks) capture these
@@ -85,25 +87,17 @@ local function do_reload()
 end
 
 --- Debounce rapid file-change events into a single reload.
+--- Uses the async compat layer so the pending reload is a cancellable
+--- `vim.async` task on new Neovims and a `vim.uv` timer otherwise.
 local function schedule_reload()
 	if _reload_timer then
-		_reload_timer:stop()
 		_reload_timer:close()
 		_reload_timer = nil
 	end
-	_reload_timer = vim.uv.new_timer()
-	_reload_timer:start(
-		150,
-		0,
-		vim.schedule_wrap(function()
-			-- Close the handle before releasing the reference.
-			if _reload_timer then
-				_reload_timer:close()
-				_reload_timer = nil
-			end
-			do_reload()
-		end)
-	)
+	_reload_timer = async.after(150, function()
+		_reload_timer = nil
+		do_reload()
+	end)
 end
 
 -- ─── file watching ────────────────────────────────────────────────────────────
